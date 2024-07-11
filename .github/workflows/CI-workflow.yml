@@ -1,6 +1,8 @@
 name: CI Workflow
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+on:
+#  push:
+  workflow_dispatch:
 
 env:
   PROJECT_ID: treasure-hunt-storage
