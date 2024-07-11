@@ -1,9 +1,20 @@
 name: CI Workflow
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: [push]
+
+env:
+  PROJECT_ID: treasure-hunt-storage
+  GAR_LOCATION: us-central1
+  SERVICE: sheba-service-gcp
+  REGION: us-central1
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK 17
@@ -14,3 +25,13 @@ jobs:
           cache: maven
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
+
+      - name: Google Auth
+        id: auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: projects/326231518390/locations/global/workloadIdentityPools/github/providers/my-repo
+          service_account: github-build-deploy-cloudrun@treasure-hunt-storage.iam.gserviceaccount.com
+
+      # Add the remaining steps for Docker auth, build, and deployment to Cloud Run
