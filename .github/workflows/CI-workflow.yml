@@ -31,7 +31,7 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           token_format: 'access_token'
-          workload_identity_provider: projects/326231518390/locations/global/workloadIdentityPools/github/providers/my-repo
+          workload_identity_provider: https://iam.googleapis.com/projects/326231518390/locations/global/workloadIdentityPools/github/providers/my-repo
           service_account: github-build-deploy-cloudrun@treasure-hunt-storage.iam.gserviceaccount.com
 
       # Add the remaining steps for Docker auth, build, and deployment to Cloud Run
