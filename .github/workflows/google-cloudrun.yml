@@ -81,8 +81,7 @@ jobs:
           credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
           service_account: github-build-deploy-cloudrun@treasure-hunt-storage.iam.gserviceaccount.com
           workload_identity_provider: projects/326231518390/locations/global/workloadIdentityPools/github/providers/my-repo
-          export_environment_variables: true
-          create_credentials_file: true
+          token_format: 'access_token'
 
       # NOTE: Alternative option - authentication via credentials json
       # - name: Google Auth
