@@ -26,12 +26,8 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode --update-snapshots verify
 
-      - name: Google Auth
-        id: auth
+      - name: Authenticate Google Cloud
         uses: 'google-github-actions/auth@v2'
         with:
-          token_format: 'access_token'
-          workload_identity_provider: projects/326231518390/locations/global/workloadIdentityPools/github/providers/my-repo
           service_account: github-build-deploy-cloudrun@treasure-hunt-storage.iam.gserviceaccount.com
-
-      # Add the remaining steps for Docker auth, build, and deployment to Cloud Run
+          workload_identity_provider: projects/326231518390/locations/global/workloadIdentityPools/github/providers/my-repo
