@@ -55,7 +55,7 @@ env:
   GAR_LOCATION: us-central1 # TODO: update Artifact Registry location
   SERVICE: sheba-service-gcp # TODO: update Cloud Run service name
   REGION: us-central1 # TODO: update Cloud Run service region
-  REPOSITORY: treasure-hunt-storage
+  REPOSITORY: sheba-service-repo
 
 jobs:
   deploy:
