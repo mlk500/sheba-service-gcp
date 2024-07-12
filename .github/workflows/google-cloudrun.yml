@@ -97,11 +97,11 @@ jobs:
           service_account: ${{ env.SERVICE_ACCOUNT }}
 
 
-      - name: Verify Google Cloud Auth
-        run: |
-          gcloud auth list
-          gcloud config list project
-          gcloud artifacts repositories list --project=${{ env.PROJECT_ID }} --location=${{ env.GAR_LOCATION }}
+#      - name: Verify Google Cloud Auth
+#        run: |
+#          gcloud auth list
+#          gcloud config list project
+#          gcloud artifacts repositories list --project=${{ env.PROJECT_ID }} --location=${{ env.GAR_LOCATION }}
 
       # NOTE: Alternative option - authentication via credentials json
       # - name: Google Auth
