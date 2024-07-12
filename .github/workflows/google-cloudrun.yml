@@ -94,7 +94,7 @@ jobs:
         with:
           workload_identity_provider: '${{ vars.WIF_PROVIDER }}'
           service_account: '${{ vars.WIF_SERVICE_ACCOUNT }}'
-          project_id: '${{ env.PROJECT_ID }}'
+          project_id: 'treasure-hunt-storage'
 
       - name: Check Google Cloud Auth
         run: |
