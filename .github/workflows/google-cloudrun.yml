@@ -94,9 +94,13 @@ jobs:
         with:
           workload_identity_provider: '${{ vars.WIF_PROVIDER }}'
           service_account: '${{ vars.WIF_SERVICE_ACCOUNT }}'
+          project_id: '${{ env.PROJECT_ID }}'
 
-      - name: Print authenticated user
-        run: gcloud auth list
+      - name: Check Google Cloud Auth
+        run: |
+          gcloud auth list
+          gcloud config list project
+          gcloud projects describe treasure-hunt-storage
 
       # NOTE: Alternative option - authentication via credentials json
       # - name: Google Auth
