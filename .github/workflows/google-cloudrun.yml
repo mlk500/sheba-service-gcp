@@ -56,6 +56,8 @@ env:
   SERVICE: sheba-service-gcp # TODO: update Cloud Run service name
   REGION: us-central1 # TODO: update Cloud Run service region
   REPOSITORY: sheba-service-repo
+  WORKLOAD_IDENTITY_PROVIDER: projects/326231518390/locations/global/workloadIdentityPools/github/providers/my-repo
+  SERVICE_ACCOUNT: github-build-deploy-cloudrun@treasure-hunt-storage.iam.gserviceaccount.com
 
 jobs:
   deploy:
@@ -89,11 +91,10 @@ jobs:
 #          workload_identity_provider: https://iam.googleapis.com/projects/326231518390/locations/global/workloadIdentityPools/github/providers/my-repo
 #          service_account: github-build-deploy-cloudrun@treasure-hunt-storage.iam.gserviceaccount.com
       - name: Authenticate to Google Cloud
-        id: auth
         uses: 'google-github-actions/auth@v2'
         with:
-          workload_identity_provider: '${{ vars.WIF_PROVIDER }}'
-          service_account: '${{ vars.WIF_SERVICE_ACCOUNT }}'
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
 
 
       - name: Verify Google Cloud Auth
