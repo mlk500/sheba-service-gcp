@@ -91,6 +91,7 @@ jobs:
 #          workload_identity_provider: https://iam.googleapis.com/projects/326231518390/locations/global/workloadIdentityPools/github/providers/my-repo
 #          service_account: github-build-deploy-cloudrun@treasure-hunt-storage.iam.gserviceaccount.com
       - name: Authenticate to Google Cloud
+        id: auth
         uses: 'google-github-actions/auth@v2'
         with:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
