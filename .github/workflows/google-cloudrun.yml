@@ -128,10 +128,10 @@ jobs:
           flags: '--allow-unauthenticated'
 
 
-#      - name: View Cloud Run logs
-#        if: failure()
-#        run: |
-#          gcloud run logs read ${{ env.SERVICE }} --region ${{ env.REGION }} --limit=50
+      - name: View Cloud Run logs
+        if: failure()
+        run: |
+          gcloud run logs read ${{ env.SERVICE }} --region ${{ env.REGION }} --limit=50
 
       - name: Show Output
         run: echo ${{ steps.deploy.outputs.url }}
