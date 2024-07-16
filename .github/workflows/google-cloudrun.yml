@@ -125,8 +125,12 @@ jobs:
           service: ${{ env.SERVICE }}
           region: ${{ env.REGION }}
           image: ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }}
+          secrets: |
+            DB_JDBC_URL=DB_JDBC_URL:latest
+            DB_USERNAME=DB_USERNAME:latest
+            DB_PASSWORD=DB_PASSWORD:latest
           flags: '--allow-unauthenticated'
-          service-account: ${{ env.SERVICE_ACCOUNT }}
+#          service-account: ${{ env.SERVICE_ACCOUNT }}
 
 
       - name: View Cloud Run logs
