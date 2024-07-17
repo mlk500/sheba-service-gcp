@@ -45,9 +45,9 @@
 name: Build and Deploy to Cloud Run
 
 on:
-#  push:
-#    branches: [ "main" ]
-  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+#  workflow_dispatch:
 
 
 env:
@@ -136,7 +136,6 @@ jobs:
 
       - name: Deploy to Cloud Run
         id: deploy
-        uses: google-github-actions/deploy-cloudrun@v2
         run: |
           gcloud run deploy ${{ env.SERVICE }} \
             --image ${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE }}:${{ github.sha }} \
