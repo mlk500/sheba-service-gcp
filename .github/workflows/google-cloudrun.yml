@@ -133,8 +133,6 @@ jobs:
           flags: '--allow-unauthenticated'
 
 
-
-
       - name: View Cloud Run logs
         if: failure()
         run: |
