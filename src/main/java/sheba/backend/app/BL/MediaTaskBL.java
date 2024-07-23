@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.entities.MediaTask;
 import sheba.backend.app.entities.Task;
+import sheba.backend.app.exceptions.MediaUploadFailed;
 import sheba.backend.app.repositories.MediaTaskRepository;
 import sheba.backend.app.util.StoragePath;
 
@@ -18,39 +19,77 @@ import java.util.Objects;
 @Service
 public class MediaTaskBL {
     private final MediaTaskRepository mediaTaskRepository;
+    private final GcsBL gcsBL;
 
-    public MediaTaskBL(MediaTaskRepository mediaTaskRepository) {
+    public MediaTaskBL(MediaTaskRepository mediaTaskRepository, GcsBL gcsBL) {
         this.mediaTaskRepository = mediaTaskRepository;
+        this.gcsBL = gcsBL;
     }
 
-    public MediaTask createMedia(Task task, MultipartFile file) throws IOException {
-        MediaTask mediaTask = new MediaTask();
-        String filename = generateUniqueFileName(task.getTaskID(), Objects.requireNonNull(file.getOriginalFilename()));
-        mediaTask.setTask(task);
-        mediaTask.setFileName(filename);
-        mediaTask.setMediaType(file.getContentType());
-        mediaTask.setMediaPath(storeFile(task.getTaskID(), file, filename));
+    //for cloud
+    public MediaTask createMedia(Task task, MultipartFile file) throws MediaUploadFailed {
+        try {
+            MediaTask mediaTask = new MediaTask();
+            String filename = generateUniqueFileName(task.getTaskID(), Objects.requireNonNull(file.getOriginalFilename()));
+            mediaTask.setTask(task);
+            mediaTask.setFileName(filename);
+            mediaTask.setMediaType(file.getContentType());
 
-        return mediaTaskRepository.save(mediaTask);
+            String objectName = StoragePath.MEDIA_TASK_PATH + "/task" + task.getTaskID() + "/" + filename;
+            String gcsPath = gcsBL.bucketUpload(file, objectName);
+            mediaTask.setMediaPath(gcsPath);
+
+            return mediaTaskRepository.save(mediaTask);
+        } catch (IOException e) {
+            throw new MediaUploadFailed("Failed to upload media for task: " + task.getTaskID(), e);
+        }
     }
+
 
     public void deleteMedia(MediaTask mediaTask) throws IOException {
         if (mediaTask != null && mediaTask.getMediaPath() != null) {
-            deleteMediaFile(mediaTask.getMediaPath());
+            gcsBL.bucketDelete(mediaTask.getMediaPath());
             mediaTaskRepository.delete(mediaTask);
         }
     }
 
-    public void deleteAllMediaForTask(Long taskId) throws IOException {
+    public void deleteAllMediaForTask(Long taskId) {
         List<MediaTask> mediaTasks = mediaTaskRepository.findAllByTaskId(taskId);
         for (MediaTask mediaTask : mediaTasks) {
-            Path pathToFile = Paths.get(mediaTask.getMediaPath());
-            if (Files.exists(pathToFile)) {
-                Files.delete(pathToFile);
-            }
+            gcsBL.bucketDelete(mediaTask.getMediaPath());
             mediaTaskRepository.delete(mediaTask);
         }
     }
+
+
+//    public MediaTask createMedia(Task task, MultipartFile file) throws IOException {
+//        MediaTask mediaTask = new MediaTask();
+//        String filename = generateUniqueFileName(task.getTaskID(), Objects.requireNonNull(file.getOriginalFilename()));
+//        mediaTask.setTask(task);
+//        mediaTask.setFileName(filename);
+//        mediaTask.setMediaType(file.getContentType());
+//        mediaTask.setMediaPath(storeFile(task.getTaskID(), file, filename));
+//
+//        return mediaTaskRepository.save(mediaTask);
+//    }
+
+//    public void deleteMedia(MediaTask mediaTask) throws IOException {
+//        if (mediaTask != null && mediaTask.getMediaPath() != null) {
+//            deleteMediaFile(mediaTask.getMediaPath());
+//            mediaTaskRepository.delete(mediaTask);
+//        }
+//    }
+
+//    public void deleteAllMediaForTask(Long taskId) throws IOException {
+//        List<MediaTask> mediaTasks = mediaTaskRepository.findAllByTaskId(taskId);
+//        for (MediaTask mediaTask : mediaTasks) {
+//            Path pathToFile = Paths.get(mediaTask.getMediaPath());
+//            if (Files.exists(pathToFile)) {
+//                Files.delete(pathToFile);
+//            }
+//            mediaTaskRepository.delete(mediaTask);
+//        }
+//    }
 
 
     private String storeFile(long taskId, MultipartFile file, String filename) throws IOException {

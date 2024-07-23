@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.BL.GameBL;
 import sheba.backend.app.entities.Game;
 import sheba.backend.app.entities.Unit;
+import sheba.backend.app.exceptions.MediaUploadFailed;
 import sheba.backend.app.util.Endpoints;
 
 import java.io.IOException;
@@ -27,17 +28,22 @@ public class GameController {
     public ResponseEntity<?> createGame(@RequestPart("game") Game game,
                                         @RequestPart(value = "image", required = false) MultipartFile image,
                                         @RequestPart(value = "units", required = false) List<Unit> units) {
-        try{
-            Game createdGame  = gameBL.createGame(game, image, units);
-            return ResponseEntity.ok(HttpStatus.CREATED);
-        }catch (RuntimeException e){
+        try {
+            Game createdGame = gameBL.createGame(game, image, units);
+            return ResponseEntity.ok(createdGame);
+        } catch (MediaUploadFailed e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error uploading media: " + e.getMessage());
+        } catch (RuntimeException e) {
             System.out.println(("error is " + e.getMessage()));
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving game: " + e.getMessage());
-        }
-        catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving object images: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error saving game: " + e.getMessage());
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing request: " + e.getMessage());
         } catch (WriterException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating QR for game: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error creating QR for game: " + e.getMessage());
         }
     }
 

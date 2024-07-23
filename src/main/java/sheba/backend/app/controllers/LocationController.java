@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.BL.LocationBL;
 import sheba.backend.app.entities.Location;
+import sheba.backend.app.exceptions.MediaUploadFailed;
 import sheba.backend.app.util.Endpoints;
 
 import java.io.IOException;
@@ -22,11 +23,21 @@ public class LocationController {
 
 
     @PostMapping(value = "create", consumes = { MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE })
-    public ResponseEntity<?> addLocation(@RequestPart("location") Location location,
-                                         @RequestPart(value = "image", required = false) MultipartFile image) throws IOException, WriterException {
-        if (image == null || image.isEmpty())
-            return ResponseEntity.ok(locationBL.createLocation(location));
-        return ResponseEntity.ok(locationBL.createLocationWithImage(location, image));
+    public ResponseEntity<?> addLocation(@RequestPart("location") Location location, @RequestPart(value = "image", required = false) MultipartFile image) {
+        try {
+            Location createdLocation;
+            if (image != null && !image.isEmpty()) {
+                createdLocation = locationBL.createLocationWithImage(location, image);
+            } else {
+                createdLocation = locationBL.createLocation(location);
+            }
+            System.out.println("Controller: Location created successfully. ID: " + createdLocation.getLocationID());
+            return ResponseEntity.ok(createdLocation);
+        } catch (Exception e) {
+            System.out.println("Controller: Error creating location: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating location: " + e.getMessage());
+        }
     }
 
     @GetMapping("getAll")

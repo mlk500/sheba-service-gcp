@@ -19,8 +19,8 @@ public class ObjectImage {
     private long id;
 
     private String name;
-
     private String imagePath;
+    private String imageUrl;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)

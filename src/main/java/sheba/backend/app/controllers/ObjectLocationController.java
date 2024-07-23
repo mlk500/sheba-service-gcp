@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.BL.LocationBL;
 import sheba.backend.app.BL.ObjectLocationBL;
 import sheba.backend.app.entities.ObjectLocation;
+import sheba.backend.app.exceptions.MediaUploadFailed;
 import sheba.backend.app.util.Endpoints;
 
 import java.io.IOException;
@@ -30,11 +31,13 @@ public class ObjectLocationController {
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         try {
             ObjectLocation createdLocationObject = locationObjectBL.createLocationObject(locationId, locationObject, images);
-            return ResponseEntity.ok(HttpStatus.CREATED);
+            return ResponseEntity.ok(createdLocationObject);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (IOException e) {
+        } catch (MediaUploadFailed e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving object images: " + e.getMessage());
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
         }

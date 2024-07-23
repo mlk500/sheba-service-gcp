@@ -8,6 +8,7 @@ import sheba.backend.app.BL.TaskBL;
 import sheba.backend.app.entities.QuestionTask;
 import sheba.backend.app.entities.Task;
 import sheba.backend.app.exceptions.AdminNotFound;
+import sheba.backend.app.exceptions.MediaUploadFailed;
 import sheba.backend.app.exceptions.TaskCannotBeEmpty;
 import sheba.backend.app.exceptions.TaskIsPartOfUnit;
 import sheba.backend.app.util.Endpoints;
@@ -40,6 +41,10 @@ public class TaskController {
         } catch (AdminNotFound e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error creating task " + e.getMessage());
         }
+        catch (MediaUploadFailed e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading media: " + e.getMessage());
+        }
+
 
     }
 
@@ -54,11 +59,43 @@ public class TaskController {
         try {
             Task updatedTask = taskBL.updateTask(taskId, task, questionTask, media, sectorAdmin, toBeDeletedMediaIds, tbdQuestion);
             return ResponseEntity.ok(updatedTask);
-        } catch (TaskCannotBeEmpty | IOException | IllegalArgumentException | AdminNotFound e) {
-            System.out.println("the error is " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating task: " + e.getMessage());
+        } catch (TaskCannotBeEmpty | IllegalArgumentException | AdminNotFound e) {
+            return ResponseEntity.badRequest().body("Error updating task: " + e.getMessage());
+        } catch (MediaUploadFailed e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error with media: " + e.getMessage());
         }
     }
+
+    @DeleteMapping("/delete/{taskId}")
+    public ResponseEntity<?> deleteTask(@PathVariable Long taskId) {
+        try {
+            taskBL.deleteTask(taskId);
+            return ResponseEntity.ok().build();
+        } catch (TaskIsPartOfUnit e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (MediaUploadFailed e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting media: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting task: " + e.getMessage());
+        }
+    }
+
+//    @PutMapping("/update/{taskId}")
+//    public ResponseEntity<?> updateTask(@PathVariable Long taskId,
+//                                        @RequestPart(value = "task", required = false) Task task,
+//                                        @RequestPart(value = "question", required = false) QuestionTask questionTask,
+//                                        @RequestPart(value = "media", required = false) List<MultipartFile> media,
+//                                        @RequestPart(value = "admin", required = false) String sectorAdmin,
+//                                        @RequestPart(value = "toBeDeleted", required = false) List<Long> toBeDeletedMediaIds,
+//                                        @RequestPart(value = "tbdQuestion", required = false) Long tbdQuestion) {
+//        try {
+//            Task updatedTask = taskBL.updateTask(taskId, task, questionTask, media, sectorAdmin, toBeDeletedMediaIds, tbdQuestion);
+//            return ResponseEntity.ok(updatedTask);
+//        } catch (TaskCannotBeEmpty | IOException | IllegalArgumentException | AdminNotFound e) {
+//            System.out.println("the error is " + e.getMessage());
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating task: " + e.getMessage());
+//        }
+//    }
 
 
 //    @PutMapping("/update-with-existing-media/{taskId}")
@@ -90,7 +127,7 @@ public class TaskController {
         try {
             Task task = taskBL.removeMediaFromTask(taskId, mediaId);
             return ResponseEntity.ok(task);
-        } catch (TaskCannotBeEmpty | IOException | IllegalArgumentException e) {
+        } catch (TaskCannotBeEmpty | IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving task: " + e.getMessage());
         }
     }
@@ -105,29 +142,41 @@ public class TaskController {
         }
     }
 
-    @DeleteMapping("/delete/{taskId}")
-    public ResponseEntity<?> deleteTask(@PathVariable Long taskId) {
-        try {
-            taskBL.deleteTask(taskId);
-            return ResponseEntity.ok().build();
-        } catch (TaskIsPartOfUnit e) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting task: " + e.getMessage());
-        }
-    }
+//    @DeleteMapping("/delete/{taskId}")
+//    public ResponseEntity<?> deleteTask(@PathVariable Long taskId) {
+//        try {
+//            taskBL.deleteTask(taskId);
+//            return ResponseEntity.ok().build();
+//        } catch (TaskIsPartOfUnit e) {
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting task: " + e.getMessage());
+//        }
+//    }
 
     @GetMapping("get/{id}")
     public ResponseEntity<?> getTaskByID(@PathVariable Long id) {
-        Optional<Task> task = taskBL.getTask(id);
-        return task.map(ResponseEntity::ok)
+        return taskBL.getTask(id)
+                .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("getAll")
-    public ResponseEntity<?> getAllTasks() {
+    public ResponseEntity<List<Task>> getAllTasks() {
         return ResponseEntity.ok(taskBL.getAllTasks());
     }
+
+//    @GetMapping("get/{id}")
+//    public ResponseEntity<?> getTaskByID(@PathVariable Long id) {
+//        Optional<Task> task = taskBL.getTask(id);
+//        return task.map(ResponseEntity::ok)
+//                .orElseGet(() -> ResponseEntity.notFound().build());
+//    }
+//
+//    @GetMapping("getAll")
+//    public ResponseEntity<?> getAllTasks() {
+//        return ResponseEntity.ok(taskBL.getAllTasks());
+//    }
 }
 

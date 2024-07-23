@@ -10,6 +10,7 @@ import sheba.backend.app.entities.Admin;
 import sheba.backend.app.entities.Game;
 import sheba.backend.app.entities.GameImage;
 import sheba.backend.app.entities.Unit;
+import sheba.backend.app.exceptions.MediaUploadFailed;
 import sheba.backend.app.repositories.AdminRepository;
 import sheba.backend.app.repositories.GameImageRepository;
 import sheba.backend.app.repositories.GameRepository;
@@ -17,6 +18,7 @@ import sheba.backend.app.security.CustomAdminDetails;
 import sheba.backend.app.util.QRCodeGenerator;
 import sheba.backend.app.util.StoragePath;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,12 +32,15 @@ public class GameBL {
     private final AdminRepository adminRepository;
     private final GameImageRepository gameImageRepository;
     private final UnitBL unitBL;
+    private final GcsBL gcsBL;
 
-    public GameBL(GameRepository gameRepository, AdminRepository adminRepository, GameImageRepository gameImageRepository, UnitBL unitBL) {
+    public GameBL(GameRepository gameRepository, AdminRepository adminRepository, GameImageRepository gameImageRepository, UnitBL unitBL, GcsBL gcsBL) {
         this.gameRepository = gameRepository;
         this.adminRepository = adminRepository;
         this.gameImageRepository = gameImageRepository;
         this.unitBL = unitBL;
+
+        this.gcsBL = gcsBL;
     }
 
     public Game createGame(Game game, MultipartFile image, List<Unit> units) throws IOException, WriterException {
@@ -58,28 +63,41 @@ public class GameBL {
             units.forEach(unit -> unitBL.createUnit(unit, finalSavedGame.getGameID()));
         }
         if (image != null && !image.isEmpty()) {
-            savedGame = saveGameImage(savedGame, image);
+            try {
+                savedGame = saveGameImage(savedGame, image);
+            } catch (IOException e) {
+                throw new MediaUploadFailed("Failed to upload game image", e);
+            }
         }
 
-
         String gameIdentifier = String.valueOf(savedGame.getGameID()); //change to URL later
-        String qrCodePath = QRCodeGenerator.generateQRCode("game-" + savedGame.getGameID(), gameIdentifier, StoragePath.GAME_QR,
-                StoragePath.GAME_QR_IMG);
-        savedGame.setQRCodePath(qrCodePath);
+        ByteArrayOutputStream qrOutputStream = new ByteArrayOutputStream();
+        QRCodeGenerator.generateQRCode("game-" + savedGame.getGameID(), gameIdentifier, qrOutputStream, StoragePath.GAME_QR_IMG);
+
+        try {
+            String qrCodePath = gcsBL.bucketUploadBytes(
+                    qrOutputStream.toByteArray(),
+                    StoragePath.GAME_QR,
+                    "game-" + savedGame.getGameID() + "-QRCODE.png",
+                    "image/png"
+            );
+            savedGame.setQRCodePath(gcsBL.getPublicUrl(qrCodePath));
+        } catch (IOException e) {
+            throw new MediaUploadFailed("Failed to upload QR code", e);
+        }
+
         return gameRepository.save(savedGame);
     }
-    private Game saveGameImage(Game game, MultipartFile image) throws IOException {
-        Path gameImagePath = Paths.get(StoragePath.GAME_IMGS_PATH + game.getGameID());
-        Files.createDirectories(gameImagePath);
 
-        String imageFileName = image.getOriginalFilename();
-        Path imagePath = gameImagePath.resolve(imageFileName);
-        image.transferTo(imagePath);
+    private Game saveGameImage(Game game, MultipartFile image) throws IOException {
+        String folderPath = StoragePath.GAME_IMGS_PATH + game.getGameID();
+        String objectName = gcsBL.bucketUpload(image, folderPath);
+        String publicUrl = gcsBL.getPublicUrl(objectName);
 
         GameImage gameImage = new GameImage();
-        gameImage.setName(imageFileName);
+        gameImage.setName(image.getOriginalFilename());
         gameImage.setType(image.getContentType());
-        gameImage.setImagePath(imagePath.toString());
+        gameImage.setImagePath(publicUrl);
         gameImage.setGame(game);
 
         gameImageRepository.save(gameImage);

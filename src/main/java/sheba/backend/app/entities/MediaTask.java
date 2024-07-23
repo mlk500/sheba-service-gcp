@@ -15,6 +15,7 @@ public class MediaTask {
     private String fileName;
     private String mediaPath;
     private String mediaType;
+    private String mediaUrl;
 //    private long fileSize;
 
 //    @Temporal(TemporalType.TIMESTAMP)

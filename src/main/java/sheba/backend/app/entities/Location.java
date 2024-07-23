@@ -24,6 +24,10 @@ public class Location {
     private String description;
     private int floor;
     private String QRCode;
+    @Transient
+    private String QRCodePublicUrl;
+    @Transient
+    private String locationImagePublicUrl;
 
     @OneToOne(mappedBy = "location", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private LocationImage locationImage;

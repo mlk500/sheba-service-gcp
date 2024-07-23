@@ -19,7 +19,8 @@ public class LocationImage {
     private long locationImgID;
     private String name;
     private String type;
-    private String imagePath;
+    private String gcsObjectName;
+    private String publicUrl;
 
     @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL)
