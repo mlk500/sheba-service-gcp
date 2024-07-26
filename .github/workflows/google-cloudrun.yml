@@ -51,15 +51,14 @@ on:
 
 
 env:
-  PROJECT_ID: treasure-hunt-project-430518 # TODO: update Google Cloud project id
-  GAR_LOCATION: us-central1 # TODO: update Artifact Registry location
-  SERVICE: sheba-service-gcp # TODO: update Cloud Run service name
-  REGION: us-central1 # TODO: update Cloud Run service region
+  PROJECT_ID: treasure-hunt-project-430518
+  GAR_LOCATION: us-central1
+  SERVICE: sheba-service-gcp
+  REGION: us-central1
   REPOSITORY: sheba-service-repo
-  WORKLOAD_IDENTITY_PROVIDER: projects/42184680030/locations/global/workloadIdentityPools/github/providers/my-repo
-  #  ${{ secrets.WIF_PROVIDER }}
-  SERVICE_ACCOUNT: github-build-deploy-cloudrun@treasure-hunt-project-430518.iam.gserviceaccount.com
-#  ${{ secrets.WIF_SERVICE_ACCOUNT }}
+  WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+  SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
 
 jobs:
   deploy:
