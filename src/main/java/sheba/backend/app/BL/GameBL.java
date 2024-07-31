@@ -5,24 +5,25 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import sheba.backend.app.DTO.GameDTO;
 import sheba.backend.app.entities.Admin;
 import sheba.backend.app.entities.Game;
 import sheba.backend.app.entities.GameImage;
 import sheba.backend.app.entities.Unit;
 import sheba.backend.app.exceptions.MediaUploadFailed;
+import sheba.backend.app.mappers.GameMapper;
 import sheba.backend.app.repositories.AdminRepository;
 import sheba.backend.app.repositories.GameImageRepository;
 import sheba.backend.app.repositories.GameRepository;
 import sheba.backend.app.security.CustomAdminDetails;
+import sheba.backend.app.util.Endpoints;
 import sheba.backend.app.util.QRCodeGenerator;
 import sheba.backend.app.util.StoragePath;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,16 +34,19 @@ public class GameBL {
     private final GameImageRepository gameImageRepository;
     private final UnitBL unitBL;
     private final GcsBL gcsBL;
+    private final GameMapper gameMapper;
 
-    public GameBL(GameRepository gameRepository, AdminRepository adminRepository, GameImageRepository gameImageRepository, UnitBL unitBL, GcsBL gcsBL) {
+    public GameBL(GameRepository gameRepository, AdminRepository adminRepository, GameImageRepository gameImageRepository, UnitBL unitBL, GcsBL gcsBL, GameMapper gameMapper) {
         this.gameRepository = gameRepository;
         this.adminRepository = adminRepository;
         this.gameImageRepository = gameImageRepository;
         this.unitBL = unitBL;
 
         this.gcsBL = gcsBL;
+        this.gameMapper = gameMapper;
     }
 
+    @Transactional
     public Game createGame(Game game, MultipartFile image, List<Unit> units) throws IOException, WriterException {
         if(SecurityContextHolder.getContext().getAuthentication() != null){
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -57,6 +61,8 @@ public class GameBL {
         if(units != null){
             Game finalSavedGame = savedGame;
             units.forEach(unit -> unitBL.createUnit(unit, finalSavedGame.getGameID()));
+            savedGame = gameRepository.findById(savedGame.getGameID())
+                    .orElseThrow(() -> new RuntimeException("Game not found after unit creation"));
         }
         if (image != null && !image.isEmpty()) {
             try {
@@ -66,23 +72,53 @@ public class GameBL {
             }
         }
 
-        String gameIdentifier = String.valueOf(savedGame.getGameID()); //change to URL later
-        ByteArrayOutputStream qrOutputStream = new ByteArrayOutputStream();
-        QRCodeGenerator.generateQRCode("game-" + savedGame.getGameID(), gameIdentifier, qrOutputStream, StoragePath.GAME_QR_IMG);
 
+//        savedGame = gameRepository.save(savedGame);
+
+//        String gameData = gameMapper.gameToGameDTO(savedGame).toString();
+//        ByteArrayOutputStream qrOutputStream = new ByteArrayOutputStream();
+//        QRCodeGenerator.generateQRCode("game-" + savedGame.getGameID(), gameData, qrOutputStream, StoragePath.GAME_QR_IMG);
+//
+//        try {
+//            String qrCodePath = gcsBL.bucketUploadBytes(
+//                    qrOutputStream.toByteArray(),
+//                    StoragePath.GAME_QR,
+//                    "game-" + savedGame.getGameID() + "-QRCODE.png",
+//                    "image/png"
+//            );
+//            savedGame.setQRCodePath(gcsBL.getPublicUrl(qrCodePath));
+//        } catch (IOException e) {
+//            throw new MediaUploadFailed("Failed to upload QR code", e);
+//        }
         try {
-            String qrCodePath = gcsBL.bucketUploadBytes(
-                    qrOutputStream.toByteArray(),
-                    StoragePath.GAME_QR,
-                    "game-" + savedGame.getGameID() + "-QRCODE.png",
-                    "image/png"
-            );
-            savedGame.setQRCodePath(gcsBL.getPublicUrl(qrCodePath));
+            String qrCodeUrl = generateGameQRCode(savedGame);
+            savedGame.setQRCodePath(qrCodeUrl);
         } catch (IOException e) {
-            throw new MediaUploadFailed("Failed to upload QR code", e);
+            throw new MediaUploadFailed("Failed to generate or upload QR code", e);
         }
 
         return gameRepository.save(savedGame);
+    }
+
+    private String generateGameQRCode(Game game) throws IOException {
+        String baseUrl = "https://sheba-service-gcp-tm3zus3bzq-uc.a.run.app";
+        String gameApiUrl = baseUrl + Endpoints.GAME_ENDPOINT + "/get/"+ game.getGameID();
+        System.out.println("game url" + gameApiUrl);
+        ByteArrayOutputStream qrOutputStream = new ByteArrayOutputStream();
+        try {
+            QRCodeGenerator.generateQRCode("game-", gameApiUrl, qrOutputStream, StoragePath.GAME_QR_IMG);
+        } catch (WriterException e) {
+            throw new RuntimeException("Failed to generate QR code", e);
+        }
+
+        String qrCodePath = gcsBL.bucketUploadBytes(
+                qrOutputStream.toByteArray(),
+                StoragePath.GAME_QR,
+                "game-" + game.getGameID() + "-QRCODE.png",
+                "image/png"
+        );
+
+        return gcsBL.getPublicUrl(qrCodePath);
     }
 
     private Game saveGameImage(Game game, MultipartFile image) throws IOException {
