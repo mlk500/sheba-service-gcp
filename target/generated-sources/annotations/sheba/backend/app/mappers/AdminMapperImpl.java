@@ -6,7 +6,7 @@ import sheba.backend.app.entities.Admin;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2024-07-20T13:13:57+0300",
+    date = "2024-07-30T04:29:08+0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.7 (Oracle Corporation)"
 )
 public class AdminMapperImpl implements AdminMapper {

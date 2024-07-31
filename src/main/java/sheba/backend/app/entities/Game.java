@@ -39,7 +39,6 @@ public class Game {
                 ", description='" + description + '\'' +
                 ", gameImage=" + gameImage +
                 ", admin=" + admin.getAdminID() + " "+ admin.getUsername()+
-                ", units=" + units+
                 '}';
     }
 }

@@ -38,6 +38,8 @@ public class MediaTaskBL {
             String objectName = StoragePath.MEDIA_TASK_PATH + "/task" + task.getTaskID() + "/" + filename;
             String gcsPath = gcsBL.bucketUpload(file, objectName);
             mediaTask.setMediaPath(gcsPath);
+            System.out.println("url is " + gcsBL.getPublicUrl(gcsPath));
+            mediaTask.setMediaUrl(gcsBL.getPublicUrl(gcsPath));
 
             return mediaTaskRepository.save(mediaTask);
         } catch (IOException e) {

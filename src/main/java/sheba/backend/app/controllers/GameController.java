@@ -6,22 +6,28 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.BL.GameBL;
+import sheba.backend.app.DTO.GameDTO;
 import sheba.backend.app.entities.Game;
 import sheba.backend.app.entities.Unit;
 import sheba.backend.app.exceptions.MediaUploadFailed;
+import sheba.backend.app.mappers.GameMapper;
 import sheba.backend.app.util.Endpoints;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(Endpoints.GAME_ENDPOINT)
 public class GameController {
     private final GameBL gameBL;
+    private final GameMapper gameMapper;
 
-    public GameController(GameBL gameBL) {
+
+    public GameController(GameBL gameBL, GameMapper gameMapper) {
         this.gameBL = gameBL;
+        this.gameMapper = gameMapper;
     }
 
     @PostMapping(value = "create", consumes = {"multipart/form-data" })
@@ -48,14 +54,21 @@ public class GameController {
     }
 
     @GetMapping("getAll")
-    public ResponseEntity<?>  getAllGames() {
-        return ResponseEntity.ok(gameBL.getAllGames());
+    public ResponseEntity<List<GameDTO>> getAllGames() {
+        List<Game> games = gameBL.getAllGames();
+        List<GameDTO> gameDTOs = games.stream()
+                .map(gameMapper::gameToGameDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(gameDTOs);
     }
 
     @GetMapping("get/{id}")
-    public ResponseEntity<Game> getGameById(@PathVariable Long id) {
-        Optional<Game> game = gameBL.getGameById(id);
-        return game.map(ResponseEntity::ok)
+    public ResponseEntity<GameDTO> getGameById(@PathVariable Long id) {
+        Optional<Game> gameOptional = gameBL.getGameById(id);
+        System.out.println("game is  " + gameOptional.get().toString());
+        System.out.println("game dto is "+ gameMapper.gameToGameDTO(gameOptional.get()).toString());
+        return gameOptional
+                .map(game-> ResponseEntity.ok(gameMapper.gameToGameDTO(game)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 

@@ -16,8 +16,6 @@ public class AdminDTO {
     private String sector;
     private UserRole role;
 
-    @Autowired
-    private TaskRepository taskRepository;
     public long getAdminID() {
         return adminID;
     }

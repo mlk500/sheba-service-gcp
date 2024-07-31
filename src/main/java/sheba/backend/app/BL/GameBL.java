@@ -52,10 +52,6 @@ public class GameBL {
             game.setAdmin(admin);
             game.setAdminID(admin.getAdminID());
         }
-        else{
-            game.setAdmin(adminRepository.findByAdminID(2));
-            game.setAdminID(2);
-        }
 
         Game savedGame = gameRepository.save(game);
         if(units != null){
