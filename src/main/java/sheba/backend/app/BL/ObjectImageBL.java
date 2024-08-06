@@ -38,12 +38,15 @@ public class ObjectImageBL {
             }
             try {
                 String folderPath = StoragePath.OBJECTS_IMAGES_PATH + "/" + object.getName();
-                String objectName = gcsBL.bucketUpload(image, folderPath);
-                String publicUrl = gcsBL.getPublicUrl(objectName);
+                String gcsPath = gcsBL.bucketUpload(image, folderPath);
+                String publicUrl = gcsBL.getPublicUrl(gcsPath);
 
                 ObjectImage objectImage = new ObjectImage();
                 objectImage.setName(image.getOriginalFilename());
-                objectImage.setImagePath(publicUrl);
+                System.out.println("image path "+ gcsPath);
+                System.out.println("image url "+ publicUrl);
+                objectImage.setImagePath(gcsPath);
+                objectImage.setImageUrl(publicUrl);
                 objectImage.setObject(object);
                 savedImages.add(objectImageRepository.save(objectImage));
             } catch (IOException e) {
@@ -52,4 +55,19 @@ public class ObjectImageBL {
         }
         return savedImages;
     }
+
+    public void deleteObjectImage(ObjectImage img){
+        if(img != null && img.getImagePath() != null){
+            System.out.println("in delete obj img " +  img.getImagePath() );
+            gcsBL.bucketDelete(img.getImagePath());
+            objectImageRepository.delete(img);
+        }
+    }
+
+    //    public void deleteMedia(MediaTask mediaTask) throws IOException {
+//        if (mediaTask != null && mediaTask.getMediaPath() != null) {
+//            gcsBL.bucketDelete(mediaTask.getMediaPath());
+//            mediaTaskRepository.delete(mediaTask);
+//        }
+//    }
 }

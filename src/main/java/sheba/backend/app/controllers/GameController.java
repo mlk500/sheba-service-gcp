@@ -86,7 +86,7 @@ public class GameController {
     public ResponseEntity<?> deleteGame(@PathVariable Long id) {
         try {
             gameBL.deleteGame(id);
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok("");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error deleting the game: " + e.getMessage());
         }

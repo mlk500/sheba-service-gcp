@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.BL.LocationBL;
 import sheba.backend.app.entities.Location;
+import sheba.backend.app.exceptions.LocationIsPartOfUnit;
 import sheba.backend.app.exceptions.MediaUploadFailed;
 import sheba.backend.app.util.Endpoints;
 
@@ -64,11 +65,16 @@ public class LocationController {
     public ResponseEntity<?> deleteLocation(@PathVariable long id) {
         try {
             locationBL.deleteLocation(id);
-            return ResponseEntity.noContent().build(); // 204 No Content
+            return ResponseEntity.ok().build();
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build(); // 404 Not Found
+            System.out.println("in msg1 "+ e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (LocationIsPartOfUnit e) {
+            System.out.println("in msg2 "+ e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); // 500 Internal Server Error
+            System.out.println("in msg3 "+ e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

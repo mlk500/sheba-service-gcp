@@ -2,16 +2,17 @@ package sheba.backend.app.BL;
 
 import com.google.zxing.WriterException;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.entities.Location;
 import sheba.backend.app.entities.LocationImage;
 import sheba.backend.app.entities.ObjectLocation;
+import sheba.backend.app.exceptions.LocationIsPartOfUnit;
 import sheba.backend.app.exceptions.MediaUploadFailed;
 import sheba.backend.app.repositories.LocationImageRepository;
 import sheba.backend.app.repositories.LocationRepository;
+import sheba.backend.app.repositories.UnitRepository;
 import sheba.backend.app.util.QRCodeGenerator;
 import sheba.backend.app.util.StoragePath;
 
@@ -21,13 +22,23 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class LocationBL {
 
     private final LocationRepository locationRepository;
     private final LocationImageRepository locationImageRepository;
     private final LocationImageBL locationImageBL;
     private final GcsBL gcsBL;
+    private final UnitRepository unitRepository;
+    private final ObjectLocationBL objectLocationBL;
+
+    public LocationBL(LocationRepository locationRepository, LocationImageRepository locationImageRepository, LocationImageBL locationImageBL, GcsBL gcsBL, UnitRepository unitRepository, ObjectLocationBL objectLocationBL) {
+        this.locationRepository = locationRepository;
+        this.locationImageRepository = locationImageRepository;
+        this.locationImageBL = locationImageBL;
+        this.gcsBL = gcsBL;
+        this.unitRepository = unitRepository;
+        this.objectLocationBL = objectLocationBL;
+    }
 
     @Transactional
     public Location createLocationWithImage(Location location, MultipartFile imageFile) throws IOException, WriterException {
@@ -99,11 +110,19 @@ public class LocationBL {
     }
 
     @Transactional
-    public void deleteLocation(long id) {
+    public void deleteLocation(long id) throws LocationIsPartOfUnit, MediaUploadFailed {
         Location location = locationRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Location not found with ID: " + id));
+        if(isPartOfAGame(location)){
+            throw new LocationIsPartOfUnit("Location is part of an existing game");
+        }
 
         try {
+            if(location.getObjectsList()!= null && !location.getObjectsList().isEmpty()){
+                for(ObjectLocation obj : location.getObjectsList()){
+                    objectLocationBL.deleteObject(obj);
+                }
+            }
             if (location.getLocationImage() != null) {
                 gcsBL.bucketDelete(location.getLocationImage().getGcsObjectName());
             }
@@ -113,8 +132,10 @@ public class LocationBL {
             }
 
             locationRepository.delete(location);
-        } catch (Exception e) {
+        } catch (MediaUploadFailed e) {
             throw new MediaUploadFailed("Failed to delete location and associated media", e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -163,5 +184,9 @@ public class LocationBL {
     public List<ObjectLocation> getObjectsOfLocation(long id) {
         Optional<Location> currLocation = getLocationByID(id);
         return currLocation.orElseThrow(() -> new RuntimeException("Location not found")).getObjectsList();
+    }
+
+    private boolean isPartOfAGame(Location checkLocation){
+        return unitRepository.findByLocation(checkLocation) != null && !unitRepository.findByLocation(checkLocation).isEmpty();
     }
 }

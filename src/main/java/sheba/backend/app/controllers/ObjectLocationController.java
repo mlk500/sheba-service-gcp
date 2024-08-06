@@ -11,6 +11,8 @@ import sheba.backend.app.BL.LocationBL;
 import sheba.backend.app.BL.ObjectLocationBL;
 import sheba.backend.app.entities.ObjectLocation;
 import sheba.backend.app.exceptions.MediaUploadFailed;
+import sheba.backend.app.exceptions.ObjectIsPartOfUnit;
+import sheba.backend.app.exceptions.ObjectNameMustBeUnique;
 import sheba.backend.app.util.Endpoints;
 
 import java.io.IOException;
@@ -38,9 +40,13 @@ public class ObjectLocationController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving object images: " + e.getMessage());
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request: " + e.getMessage());
-        } catch (Exception e) {
+        }
+        catch (ObjectNameMustBeUnique e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving object: " + e.getMessage());
+        }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
         }
+
     }
 
     @GetMapping(value = "/getAll/{locationId}")
@@ -49,6 +55,16 @@ public class ObjectLocationController {
             return ResponseEntity.ok(locationBL.getObjectsOfLocation(locationId));
         }
         catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping(value = "/delete/{id}")
+    public ResponseEntity<?> deleteObject(@PathVariable long id){
+        try {
+            locationObjectBL.deleteObject(id);
+            return ResponseEntity.status(HttpStatus.OK).body("Object Deleted Successfully");
+        } catch (Exception e){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
