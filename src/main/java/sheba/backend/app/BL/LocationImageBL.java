@@ -34,7 +34,7 @@ public class LocationImageBL {
             locationImage.setName(file.getOriginalFilename());
             locationImage.setType(file.getContentType());
             locationImage.setGcsObjectName(objectName);
-            locationImage.setPublicUrl(publicUrl);
+            locationImage.setImageURL(publicUrl);
             locationImage.setLocation(location);
 
             LocationImage savedImage = locationImageRepository.save(locationImage);

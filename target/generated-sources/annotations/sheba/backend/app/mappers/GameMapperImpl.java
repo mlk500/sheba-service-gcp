@@ -12,7 +12,7 @@ import sheba.backend.app.entities.Unit;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2024-07-30T23:31:04+0300",
+    date = "2024-08-07T00:45:18+0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.7 (Oracle Corporation)"
 )
 @Component
@@ -32,7 +32,7 @@ public class GameMapperImpl implements GameMapper {
         gameDTO.setUnits( unitListToUnitDTOList( game.getUnits() ) );
         gameDTO.setGameID( game.getGameID() );
         gameDTO.setGameName( game.getGameName() );
-        gameDTO.setQRCodePath( game.getQRCodePath() );
+        gameDTO.setQRCodeURL( game.getQRCodeURL() );
 
         return gameDTO;
     }

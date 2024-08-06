@@ -17,6 +17,7 @@ public class Game {
     private String gameName;
     private String description;
     private String QRCodePath;
+    private String QRCodeURL;
 
 
 
@@ -28,7 +29,7 @@ public class Game {
     @JoinColumn(name = "fk_admin_id")
     private Admin admin;
 
-    @OneToMany(mappedBy = "game")
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Unit> units;
 
     @Override

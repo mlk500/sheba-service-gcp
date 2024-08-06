@@ -12,6 +12,7 @@ import sheba.backend.app.entities.Admin;
 import sheba.backend.app.entities.Game;
 import sheba.backend.app.entities.GameImage;
 import sheba.backend.app.entities.Unit;
+import sheba.backend.app.exceptions.ImageDeleteFailed;
 import sheba.backend.app.exceptions.MediaUploadFailed;
 import sheba.backend.app.mappers.GameMapper;
 import sheba.backend.app.repositories.AdminRepository;
@@ -72,27 +73,10 @@ public class GameBL {
             }
         }
 
-
-//        savedGame = gameRepository.save(savedGame);
-
-//        String gameData = gameMapper.gameToGameDTO(savedGame).toString();
-//        ByteArrayOutputStream qrOutputStream = new ByteArrayOutputStream();
-//        QRCodeGenerator.generateQRCode("game-" + savedGame.getGameID(), gameData, qrOutputStream, StoragePath.GAME_QR_IMG);
-//
-//        try {
-//            String qrCodePath = gcsBL.bucketUploadBytes(
-//                    qrOutputStream.toByteArray(),
-//                    StoragePath.GAME_QR,
-//                    "game-" + savedGame.getGameID() + "-QRCODE.png",
-//                    "image/png"
-//            );
-//            savedGame.setQRCodePath(gcsBL.getPublicUrl(qrCodePath));
-//        } catch (IOException e) {
-//            throw new MediaUploadFailed("Failed to upload QR code", e);
-//        }
         try {
-            String qrCodeUrl = generateGameQRCode(savedGame);
-            savedGame.setQRCodePath(qrCodeUrl);
+            String qrCodePath = generateGameQRCode(savedGame);
+            savedGame.setQRCodePath(qrCodePath);
+            savedGame.setQRCodeURL(gcsBL.getPublicUrl(qrCodePath));
         } catch (IOException e) {
             throw new MediaUploadFailed("Failed to generate or upload QR code", e);
         }
@@ -117,8 +101,7 @@ public class GameBL {
                 "game-" + game.getGameID() + "-QRCODE.png",
                 "image/png"
         );
-
-        return gcsBL.getPublicUrl(qrCodePath);
+        return qrCodePath;
     }
 
     private Game saveGameImage(Game game, MultipartFile image) throws IOException {
@@ -129,7 +112,8 @@ public class GameBL {
         GameImage gameImage = new GameImage();
         gameImage.setName(image.getOriginalFilename());
         gameImage.setType(image.getContentType());
-        gameImage.setImagePath(publicUrl);
+        gameImage.setImagePath(objectName);
+        gameImage.setImageURL(publicUrl);
         gameImage.setGame(game);
 
         gameImageRepository.save(gameImage);
@@ -158,11 +142,10 @@ public class GameBL {
 
         existingGame.setGameName(gameDetails.getGameName());
         existingGame.setDescription(gameDetails.getDescription());
-        // other fields to update
         return gameRepository.save(existingGame);
     }
 
-    public void deleteGame(Long id) {
+    public void deleteGame(Long id) throws ImageDeleteFailed {
         Game game = gameRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Game not found with id " + id));
 
@@ -173,7 +156,15 @@ public class GameBL {
                 !adminDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MAIN_ADMIN"))) {
             throw new RuntimeException("You do not have permission to delete this game");
         }
-
+        try {
+            gcsBL.bucketDelete(game.getQRCodePath());
+            if (game.getGameImage() != null) {
+                System.out.println("image path is " + game.getGameImage().getImagePath());
+                gcsBL.bucketDelete(game.getGameImage().getImagePath());
+            }
+        } catch (Exception e) {
+            throw new ImageDeleteFailed("Could not Delete Game's Image or QR Code");
+        }
         gameRepository.deleteById(id);
     }
 

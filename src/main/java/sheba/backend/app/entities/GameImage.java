@@ -20,7 +20,7 @@ public class GameImage {
     private String name;
     private String type;
     private String imagePath;
-
+    private String imageURL;
     @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "fk_game_id")

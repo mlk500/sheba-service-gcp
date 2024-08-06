@@ -10,7 +10,7 @@ public class GameDTO {
 
     private long gameID;
     private String gameName;
-    private String QRCodePath;
+    private String QRCodeURL;
     private List<UnitDTO> units;
 
 }

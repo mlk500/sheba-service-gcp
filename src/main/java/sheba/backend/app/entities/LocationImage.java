@@ -20,7 +20,7 @@ public class LocationImage {
     private String name;
     private String type;
     private String gcsObjectName;
-    private String publicUrl;
+    private String imageURL;
 
     @JsonIgnore
     @OneToOne(cascade = CascadeType.ALL)

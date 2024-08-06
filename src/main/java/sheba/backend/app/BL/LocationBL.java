@@ -55,7 +55,7 @@ public class LocationBL {
                 LocationImage locationImage = locationImageBL.uploadImageToGCS(imageFile, locationSaved);
                 System.out.println("LocationBL: Image uploaded to GCS. GCS Object Name: " + locationImage.getGcsObjectName());
                 locationSaved.setLocationImage(locationImage);
-                locationSaved.setLocationImagePublicUrl(locationImage.getPublicUrl());
+                locationSaved.setLocationImagePublicUrl(locationImage.getImageURL());
                 locationSaved = locationRepository.save(locationSaved);
                 System.out.println("LocationBL: Location updated with image information. Image ID: " + locationImage.getLocationImgID());
             } catch (Exception e) {
@@ -162,7 +162,7 @@ public class LocationBL {
                 location.setQRCodePublicUrl(gcsBL.getPublicUrl(location.getQRCode()));
             }
             if (location.getLocationImage() != null) {
-                location.setLocationImagePublicUrl(location.getLocationImage().getPublicUrl());
+                location.setLocationImagePublicUrl(location.getLocationImage().getImageURL());
             }
         }
         return locations;
@@ -175,7 +175,7 @@ public class LocationBL {
                 location.setQRCodePublicUrl(gcsBL.getPublicUrl(location.getQRCode()));
             }
             if (location.getLocationImage() != null) {
-                location.setLocationImagePublicUrl(location.getLocationImage().getPublicUrl());
+                location.setLocationImagePublicUrl(location.getLocationImage().getImageURL());
             }
         });
         return locationOpt;
