@@ -68,4 +68,9 @@ public class ObjectLocationController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
+    @GetMapping(value="get-objects-for-model")
+    public ResponseEntity<List<ObjectLocation>> getAllObjects(){
+        return null;
+    }
 }

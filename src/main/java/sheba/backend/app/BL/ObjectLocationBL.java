@@ -92,5 +92,17 @@ public class ObjectLocationBL {
         return unitRepository.findByObject(checkObject) != null && !unitRepository.findByObject(checkObject).isEmpty();
     }
 
+    public List<ObjectLocation> getAllObjects(){
+        List<ObjectLocation> objects = locationObjectRepository.findAll();
+        for(ObjectLocation obj : objects){
+            if(obj.getObjectImages() == null || obj.getObjectImages().isEmpty()){
+                objects.remove(obj);
+            }
+        }
+        return objects;
+    }
+
+
+
 
 }

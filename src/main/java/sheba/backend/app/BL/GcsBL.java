@@ -70,6 +70,14 @@ public class GcsBL {
         return storage.delete(bucketName, objectName);
     }
 
+    public boolean deleteFolder(String folderName) {
+        if (!folderName.endsWith("/")) {
+            folderName += "/";
+        }
+        System.out.println("folder is "+ folderName);
+        return storage.delete(bucketName, folderName);
+    }
+
     public boolean bucketObjectExists(String objectName) {
         Blob blob = storage.get(bucketName, objectName);
         return blob != null && blob.exists();

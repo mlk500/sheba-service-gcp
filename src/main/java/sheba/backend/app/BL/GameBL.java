@@ -161,6 +161,7 @@ public class GameBL {
             if (game.getGameImage() != null) {
                 System.out.println("image path is " + game.getGameImage().getImagePath());
                 gcsBL.bucketDelete(game.getGameImage().getImagePath());
+//                gcsBL.deleteFolder();
             }
         } catch (Exception e) {
             throw new ImageDeleteFailed("Could not Delete Game's Image or QR Code");

@@ -148,6 +148,8 @@ public class TaskBL {
             for (MediaTask mediaTask : task.getMediaList()) {
                 gcsBL.bucketDelete(mediaTask.getMediaPath());
             }
+            boolean res = gcsBL.deleteFolder(StoragePath.MEDIA_TASK_PATH+"/task"+taskId);
+            System.out.println("res is "+ res);
         } catch (Exception e) {
             throw new MediaUploadFailed("Failed to delete media from cloud storage", e);
         }

@@ -35,7 +35,7 @@ public class MediaTaskBL {
             mediaTask.setFileName(filename);
             mediaTask.setMediaType(file.getContentType());
 
-            String objectName = StoragePath.MEDIA_TASK_PATH + "/task" + task.getTaskID() + "/" + filename;
+            String objectName = StoragePath.MEDIA_TASK_PATH + "/task" + task.getTaskID();
             String gcsPath = gcsBL.bucketUpload(file, objectName);
             mediaTask.setMediaPath(gcsPath);
             System.out.println("url is " + gcsBL.getPublicUrl(gcsPath));

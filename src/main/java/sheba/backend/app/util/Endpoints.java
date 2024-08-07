@@ -14,6 +14,6 @@ public class Endpoints {
     public static final String TASK_ENDPOINT = "/Task";
     public static final String GAME_ENDPOINT = "/game";
     public static final String UNIT_ENDPOINT = "/unit";
-
+    public static final String PUBLIC_ENDPOINT = "/public";
 
 }
