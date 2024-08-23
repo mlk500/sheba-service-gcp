@@ -8,7 +8,7 @@ import sheba.backend.app.entities.ObjectLocation;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2024-08-07T13:42:40+0300",
+    date = "2024-08-23T12:04:24+0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.7 (Oracle Corporation)"
 )
 @Component
