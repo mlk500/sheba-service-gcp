@@ -38,7 +38,7 @@ public class SecurityConfig implements WebMvcConfigurer {
     private final CustomAdminDetailsService adminDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private String[] authorized_urls = {"/login/**", "/register/**",
-            Endpoints.GAME_ENDPOINT+"/get",
+            Endpoints.GAME_ENDPOINT+"/**",
     Endpoints.PUBLIC_ENDPOINT+"/**"};
 //    private String[] authorized_urls = {"/login/**", "/register/**",
 //            Endpoints.LOCATION_IMAGE_ENDPOINT + "/**", Endpoints.LOCATION_ENDPOINT+ "/**",
