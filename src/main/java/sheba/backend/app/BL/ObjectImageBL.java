@@ -43,8 +43,8 @@ public class ObjectImageBL {
 
                 ObjectImage objectImage = new ObjectImage();
                 objectImage.setName(image.getOriginalFilename());
-                System.out.println("image path "+ gcsPath);
-                System.out.println("image url "+ publicUrl);
+//                System.out.println("image path "+ gcsPath);
+//                System.out.println("image url "+ publicUrl);
                 objectImage.setImagePath(gcsPath);
                 objectImage.setImageUrl(publicUrl);
                 objectImage.setObject(object);
