@@ -72,6 +72,7 @@ public class LocationBL {
     @Transactional
     public Location createLocation(Location location) throws IOException, WriterException {
         try {
+            location = locationRepository.save(location);
             String[] qrCodeInfo = generateLocationQRCode(location);
             location.setQRCode(qrCodeInfo[0]);
             location.setQRCodePublicUrl(qrCodeInfo[1]);
@@ -141,7 +142,7 @@ public class LocationBL {
 
     private String[] generateLocationQRCode(Location location) throws IOException, WriterException {
         String qrName = "location_" + location.getName() + "_floor" + location.getFloor();
-        String qrContent = "ID " + location.getLocationID() + "\n" + "Location Name " + location.getName() + "\n"
+        String qrContent = location.getLocationID() + "\n" + "Location Name " + location.getName() + "\n"
                 + "Floor " + location.getFloor() + "\n" + "Description " + location.getDescription();
 
         ByteArrayOutputStream qrStream = new ByteArrayOutputStream();

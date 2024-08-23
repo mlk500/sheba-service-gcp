@@ -80,6 +80,7 @@ public class ObjectLocationBL {
                     }
                 }
             }
+            locationObjectRepository.deleteById(objectID);
         }
     }
 
