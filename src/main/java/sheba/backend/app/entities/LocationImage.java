@@ -23,7 +23,7 @@ public class LocationImage {
     private String imageURL;
 
     @JsonIgnore
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     @JoinColumn(name = "fk_location_id")
     private Location location;
 

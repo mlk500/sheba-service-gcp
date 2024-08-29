@@ -25,15 +25,13 @@ import java.util.Optional;
 public class LocationBL {
 
     private final LocationRepository locationRepository;
-    private final LocationImageRepository locationImageRepository;
     private final LocationImageBL locationImageBL;
     private final GcsBL gcsBL;
     private final UnitRepository unitRepository;
     private final ObjectLocationBL objectLocationBL;
 
-    public LocationBL(LocationRepository locationRepository, LocationImageRepository locationImageRepository, LocationImageBL locationImageBL, GcsBL gcsBL, UnitRepository unitRepository, ObjectLocationBL objectLocationBL) {
+    public LocationBL(LocationRepository locationRepository, LocationImageBL locationImageBL, GcsBL gcsBL, UnitRepository unitRepository, ObjectLocationBL objectLocationBL) {
         this.locationRepository = locationRepository;
-        this.locationImageRepository = locationImageRepository;
         this.locationImageBL = locationImageBL;
         this.gcsBL = gcsBL;
         this.unitRepository = unitRepository;
@@ -42,21 +40,19 @@ public class LocationBL {
 
     @Transactional
     public Location createLocationWithImage(Location location, MultipartFile imageFile) throws IOException, WriterException {
-        System.out.println("LocationBL: Creating location with image. Location name: " + location.getName());
         String[] qrCodeInfo = generateLocationQRCode(location);
         location.setQRCode(qrCodeInfo[0]);
         location.setQRCodePublicUrl(qrCodeInfo[1]);
         Location locationSaved = locationRepository.save(location);
-        System.out.println("LocationBL: Location saved. ID: " + locationSaved.getLocationID());
-
         if (imageFile != null && !imageFile.isEmpty()) {
-            System.out.println("LocationBL: Image file present. Filename: " + imageFile.getOriginalFilename() + ", Size: " + imageFile.getSize() + " bytes");
             try {
-                LocationImage locationImage = locationImageBL.uploadImageToGCS(imageFile, locationSaved);
+                LocationImage locationImage = locationImageBL.uploadImageToGCS(imageFile);
                 System.out.println("LocationBL: Image uploaded to GCS. GCS Object Name: " + locationImage.getGcsObjectName());
+                locationImage.setLocation(locationSaved);
                 locationSaved.setLocationImage(locationImage);
                 locationSaved.setLocationImagePublicUrl(locationImage.getImageURL());
                 locationSaved = locationRepository.save(locationSaved);
+
                 System.out.println("LocationBL: Location updated with image information. Image ID: " + locationImage.getLocationImgID());
             } catch (Exception e) {
                 System.out.println("LocationBL: Error uploading image for location: " + e.getMessage());
@@ -70,7 +66,7 @@ public class LocationBL {
     }
 
     @Transactional
-    public Location createLocation(Location location) throws IOException, WriterException {
+    public Location createLocation(Location location) {
         try {
             location = locationRepository.save(location);
             String[] qrCodeInfo = generateLocationQRCode(location);
@@ -83,44 +79,80 @@ public class LocationBL {
     }
 
     @Transactional
-    public Location updateLocation(Location location) throws IOException, WriterException {
-        Location currLocation = locationRepository.findByLocationID(location.getLocationID());
-        if (currLocation != null) {
+    public Location updateLocation(Long locationID, Location location, MultipartFile imageFile, boolean deleteImage) throws IOException, WriterException {
+        Location currLocation = locationRepository.findById(locationID)
+                .orElseThrow(() -> new EntityNotFoundException("Location not found with id: " + locationID));
+        if (deleteImage && currLocation.getLocationImage() != null) {
             try {
-                if (currLocation.getQRCode() != null) {
-                    gcsBL.bucketDelete(currLocation.getQRCode());
-                }
-
-                currLocation.setName(location.getName());
-                currLocation.setDescription(location.getDescription());
-                currLocation.setFloor(location.getFloor());
-                currLocation.getObjectsList().clear();
-                currLocation.getObjectsList().addAll(location.getObjectsList());
-
-                String[] qrCodeInfo = generateLocationQRCode(currLocation);
-                currLocation.setQRCode(qrCodeInfo[0]);
-                currLocation.setQRCodePublicUrl(qrCodeInfo[1]);
-
-                return locationRepository.save(currLocation);
-            } catch (IOException | WriterException e) {
-                throw new MediaUploadFailed("Failed to update location", e);
+                locationImageBL.deleteLocationImage(currLocation.getLocationImage());
+                currLocation.setLocationImage(null);
+                currLocation.setLocationImagePublicUrl(null);
+            } catch (Exception e) {
+                System.out.println("failed to delete location image !!");
             }
-        } else {
-            throw new EntityNotFoundException("Location not found with ID: " + location.getLocationID());
+
         }
+
+        return updateLocation(currLocation, location, imageFile);
     }
+
+    @Transactional
+    public Location updateLocation(Location currLocation, Location newLocation, MultipartFile imageFile) throws IOException, WriterException {
+
+
+        currLocation.setName(newLocation.getName());
+        currLocation.setDescription(newLocation.getDescription());
+        currLocation.setFloor(newLocation.getFloor());
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            LocationImage newLocationImage = new LocationImage();
+            if (currLocation.getLocationImage() != null) {
+                try {
+                    newLocationImage = locationImageBL.updateImageFile(imageFile, currLocation.getLocationImage());
+                } catch (Exception e){
+                    System.out.println("Could not update image " + e.getMessage());
+                }
+            } else {
+                try {
+                    newLocationImage = locationImageBL.uploadImageToGCS(imageFile);
+                } catch (Exception e) {
+                    throw new MediaUploadFailed("Failed to upload new image for location", e);
+                }
+            }
+            try {
+                newLocationImage.setLocation(currLocation);
+                currLocation.setLocationImage(newLocationImage);
+                currLocation.setLocationImagePublicUrl(newLocationImage.getImageURL());
+            } catch (Exception e){
+                System.out.println("Failed to set image for location " + e.getMessage());
+            }
+
+        }
+
+        String[] qrCodeInfo = generateLocationQRCode(currLocation);
+        currLocation.setQRCode(qrCodeInfo[0]);
+        currLocation.setQRCodePublicUrl(qrCodeInfo[1]);
+        try {
+            return locationRepository.save(currLocation);
+
+        } catch (Exception e) {
+            System.out.println("error in return " + e.getMessage());
+        }
+        return null;
+    }
+
 
     @Transactional
     public void deleteLocation(long id) throws LocationIsPartOfUnit, MediaUploadFailed {
         Location location = locationRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Location not found with ID: " + id));
-        if(isPartOfAGame(location)){
+        if (isPartOfAGame(location)) {
             throw new LocationIsPartOfUnit("Location is part of an existing game");
         }
 
         try {
-            if(location.getObjectsList()!= null && !location.getObjectsList().isEmpty()){
-                for(ObjectLocation obj : location.getObjectsList()){
+            if (location.getObjectsList() != null && !location.getObjectsList().isEmpty()) {
+                for (ObjectLocation obj : location.getObjectsList()) {
                     objectLocationBL.deleteObject(obj);
                 }
             }
@@ -187,7 +219,7 @@ public class LocationBL {
         return currLocation.orElseThrow(() -> new RuntimeException("Location not found")).getObjectsList();
     }
 
-    private boolean isPartOfAGame(Location checkLocation){
+    private boolean isPartOfAGame(Location checkLocation) {
         return unitRepository.findByLocation(checkLocation) != null && !unitRepository.findByLocation(checkLocation).isEmpty();
     }
 }

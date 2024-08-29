@@ -17,7 +17,6 @@ import java.util.Optional;
 public class LocationImageBL {
     private final LocationImageRepository locationImageRepository;
     private final GcsBL gcsBL;
-    private static final Logger logger = LoggerFactory.getLogger(LocationImageBL.class);
 
 
     public LocationImageBL(LocationImageRepository locationImageRepository, GcsBL gcsBL) {
@@ -25,17 +24,17 @@ public class LocationImageBL {
         this.gcsBL = gcsBL;
     }
 
-    public LocationImage uploadImageToGCS(MultipartFile file, Location location) throws IOException {
+    public LocationImage uploadImageToGCS(MultipartFile file) throws IOException {
         try {
             String folderName = StoragePath.LOCATION_IMAGE_PATH;
             String objectName = gcsBL.bucketUpload(file, folderName);
             String publicUrl = gcsBL.getPublicUrl(objectName);
+
             LocationImage locationImage = new LocationImage();
             locationImage.setName(file.getOriginalFilename());
             locationImage.setType(file.getContentType());
             locationImage.setGcsObjectName(objectName);
             locationImage.setImageURL(publicUrl);
-            locationImage.setLocation(location);
 
             LocationImage savedImage = locationImageRepository.save(locationImage);
             System.out.println("LocationImageBL: LocationImage saved to database. ID: " + savedImage.getLocationImgID());
@@ -47,12 +46,41 @@ public class LocationImageBL {
         }
     }
 
-    public void deleteImageFromGCS(LocationImage locationImage) {
-        try {
-            gcsBL.bucketDelete(locationImage.getGcsObjectName());
-            locationImageRepository.delete(locationImage);
-        } catch (Exception e) {
-            throw new MediaUploadFailed("Failed to delete image from GCS", e);
+    public void uploadImageToGCS(MultipartFile imageFile, LocationImage locationImage) throws IOException {
+        String folderName = StoragePath.LOCATION_IMAGE_PATH;
+        String gcsObjectName = gcsBL.bucketUpload(imageFile, folderName);
+        String imageUrl = gcsBL.getPublicUrl(gcsObjectName);
+
+        locationImage.setName(imageFile.getOriginalFilename());
+        locationImage.setType(imageFile.getContentType());
+        locationImage.setGcsObjectName(gcsObjectName);
+        locationImage.setImageURL(imageUrl);
+
+        locationImageRepository.save(locationImage);
+    }
+
+    public void deleteLocationImage(LocationImage locationImage) {
+        if (locationImage != null && locationImage.getGcsObjectName() != null) {
+            try {
+                gcsBL.bucketDelete(locationImage.getGcsObjectName());
+                locationImageRepository.delete(locationImage);
+            } catch (Exception e) {
+                System.out.println("deleteLocationImage error");
+                throw new MediaUploadFailed("Failed to delete image from GCS", e);
+            }
         }
+    }
+    public LocationImage updateImageFile(MultipartFile imageFile, LocationImage locationImage) throws IOException {
+        gcsBL.bucketDelete(locationImage.getGcsObjectName());
+        String folderName = StoragePath.LOCATION_IMAGE_PATH;
+        String gcsObjectName = gcsBL.bucketUpload(imageFile, folderName);
+        String imageUrl = gcsBL.getPublicUrl(gcsObjectName);
+
+        locationImage.setName(imageFile.getOriginalFilename());
+        locationImage.setType(imageFile.getContentType());
+        locationImage.setGcsObjectName(gcsObjectName);
+        locationImage.setImageURL(imageUrl);
+
+        return locationImageRepository.save(locationImage);
     }
 }

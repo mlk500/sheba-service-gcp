@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.BL.LocationBL;
+import sheba.backend.app.BL.LocationImageBL;
 import sheba.backend.app.entities.Location;
 import sheba.backend.app.exceptions.LocationIsPartOfUnit;
 import sheba.backend.app.exceptions.MediaUploadFailed;
@@ -21,6 +22,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class LocationController {
     private final LocationBL locationBL;
+    private final LocationImageBL locationImageBL;
 
 
     @PostMapping(value = "create", consumes = { MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE })
@@ -46,13 +48,12 @@ public class LocationController {
         return ResponseEntity.ok(locationBL.getAll());
     }
 
-    @PutMapping("update")
-    public ResponseEntity<?> updateLocation(@RequestBody Location location) {
+    @PutMapping("update/{locationId}")
+    public ResponseEntity<?> updateLocation(@PathVariable Long locationId, @RequestPart(value="location", required = true) Location location, @RequestPart(value = "image", required = false) MultipartFile image, @RequestParam(value = "deleteImage", defaultValue = "false") boolean deleteImage) {
         try {
-            Location updatedLocation = locationBL.updateLocation(location);
+            Location updatedLocation = locationBL.updateLocation(locationId, location, image, deleteImage);
             return new ResponseEntity<>(updatedLocation, HttpStatus.OK);
         } catch (EntityNotFoundException e) {
-            // return a 404 Not Found
             return new ResponseEntity<>("Location not found with ID: " + location.getLocationID(), HttpStatus.NOT_FOUND);
         } catch (IOException | WriterException e) {
             return new ResponseEntity<>("Error generating QR code: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
