@@ -76,7 +76,6 @@ public class TaskBL {
         try {
             createTaskItems(task, questionTask, media);
         } catch (MediaUploadFailed e) {
-            // If media upload fails, we roll back the transaction
             throw new MediaUploadFailed("Failed to create task due to media upload failure", e);
         }
         return taskRepository.save(task);

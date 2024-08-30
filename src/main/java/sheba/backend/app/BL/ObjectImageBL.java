@@ -27,9 +27,7 @@ public class ObjectImageBL {
         this.gcsBL = gcsBL;
     }
 
-    public List<ObjectImage> addObjectImage(Long objectId, List<MultipartFile> images) throws IOException {
-        ObjectLocation object = locationObjectRepository.findById(objectId)
-                .orElseThrow(() -> new EntityNotFoundException("LocationObject not found with ID: " + objectId));
+    public List<ObjectImage> addObjectImages(ObjectLocation object, List<MultipartFile> images) throws IOException {
 
         List<ObjectImage> savedImages = new ArrayList<>();
         for (MultipartFile image : images) {
@@ -64,7 +62,14 @@ public class ObjectImageBL {
         }
     }
 
-    //    public void deleteMedia(MediaTask mediaTask) throws IOException {
+    public ObjectImage getObjectImageByID(long imgID){
+        ObjectImage objectImage = objectImageRepository.findById(imgID).orElseThrow(() ->
+                new EntityNotFoundException("Object Image was not found with ID: " + imgID));
+        return objectImage;
+    }
+
+
+        //    public void deleteMedia(MediaTask mediaTask) throws IOException {
 //        if (mediaTask != null && mediaTask.getMediaPath() != null) {
 //            gcsBL.bucketDelete(mediaTask.getMediaPath());
 //            mediaTaskRepository.delete(mediaTask);

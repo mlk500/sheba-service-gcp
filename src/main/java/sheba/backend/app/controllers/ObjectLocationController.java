@@ -1,6 +1,5 @@
 package sheba.backend.app.controllers;
 
-import com.sun.tools.jconsole.JConsoleContext;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -10,9 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.BL.LocationBL;
 import sheba.backend.app.BL.ObjectLocationBL;
 import sheba.backend.app.entities.ObjectLocation;
-import sheba.backend.app.exceptions.MediaUploadFailed;
-import sheba.backend.app.exceptions.ObjectIsPartOfUnit;
-import sheba.backend.app.exceptions.ObjectNameMustBeUnique;
+import sheba.backend.app.exceptions.*;
 import sheba.backend.app.util.Endpoints;
 
 import java.io.IOException;
@@ -72,5 +69,20 @@ public class ObjectLocationController {
     @GetMapping(value="get-objects-for-model")
     public ResponseEntity<List<ObjectLocation>> getAllObjects(){
         return null;
+    }
+
+    @PutMapping("/update/{objectId}")
+    public ResponseEntity<?> updateObjectLocation(@PathVariable Long objectId,
+                                        @RequestPart(value = "object", required = false) ObjectLocation objectLocation,
+                                        @RequestPart(value = "images", required = false) List<MultipartFile> media,
+                                        @RequestPart(value = "deletedImageIds", required = false) List<Long> toBeDeletedMediaIds) {
+        try {
+            ObjectLocation updatedObject = locationObjectBL.updateObject(objectId, objectLocation, media, toBeDeletedMediaIds);
+            return ResponseEntity.ok(updatedObject);
+        }  catch (MediaUploadFailed e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error with media: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error Updating Object: "+ e.getMessage());
+        }
     }
 }
