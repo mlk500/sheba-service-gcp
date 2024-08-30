@@ -39,10 +39,12 @@ public class AdminController {
         return ResponseEntity.ok(adminBL.getAllAdmins());
     }
 
-    @PutMapping("update")
-    public ResponseEntity<?> updateAdmin(@RequestBody Admin admin) {
+    @PutMapping("update/{adminID}")
+    public ResponseEntity<?> updateAdmin(@PathVariable Long adminID, @RequestPart(value = "admin") Admin admin,
+                                         @RequestPart(value = "newPassword", required = false) String newPassword) {
+        System.out.println("in here?");
         try {
-            AdminDTO updatedAdmin = adminBL.updateAdmin(admin);
+            AdminDTO updatedAdmin = adminBL.updateAdmin(adminID, admin, newPassword);
             return new ResponseEntity<>(updatedAdmin, HttpStatus.OK);
 
         } catch (EntityNotFoundException e) {
@@ -56,11 +58,11 @@ public class AdminController {
     public ResponseEntity<?> deleteAdmin(@PathVariable long id) {
         try {
             adminBL.deleteAdmin(id);
-            return ResponseEntity.noContent().build(); // 204 No Content
+            return ResponseEntity.ok().build();
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.notFound().build(); // 404 Not Found
+            return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); // 500 Internal Server Error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

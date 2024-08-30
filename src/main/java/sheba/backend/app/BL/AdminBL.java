@@ -6,6 +6,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import sheba.backend.app.DTO.AdminDTO;
 import sheba.backend.app.entities.Admin;
+import sheba.backend.app.entities.Game;
+import sheba.backend.app.entities.Task;
 import sheba.backend.app.enums.UserRole;
 import sheba.backend.app.exceptions.AdminAlreadyExists;
 import sheba.backend.app.repositories.AdminRepository;
@@ -45,24 +47,42 @@ public class AdminBL {
                 .collect(Collectors.toList());
     }
 
-    public AdminDTO updateAdmin(Admin admin) {
-        Admin currAdmin = adminRepository.findByAdminID(admin.getAdminID());
-        if (currAdmin != null) {
-            currAdmin.setUsername(admin.getUsername());
-            currAdmin.setSector(admin.getSector());
-            currAdmin.setRole(admin.getRole());
-            currAdmin.getGamesList().clear();
-            currAdmin.setGamesList(admin.getGamesList());
-            adminRepository.save(currAdmin);
-            return adminMapper.adminToAdminDTO(currAdmin);
-        } else {
-            throw new EntityNotFoundException("Admin with user name " + admin.getUsername() + "not found" );
+    public AdminDTO updateAdmin(long adminID, Admin admin, String newPassword) {
+
+        Admin currAdmin = adminRepository.findById(adminID).orElseThrow(() -> new EntityNotFoundException("Admin not found with ID " + adminID));
+        if(newPassword != null && !newPassword.isEmpty()){
+            currAdmin.setPassword(passwordEncoder.encode(newPassword));
         }
+        currAdmin.setUsername(admin.getUsername());
+        currAdmin.setSector(admin.getSector());
+        currAdmin.setRole(admin.getRole());
+        currAdmin.getGamesList().clear();
+        currAdmin.setGamesList(admin.getGamesList());
+        adminRepository.save(currAdmin);
+        return adminMapper.adminToAdminDTO(currAdmin);
     }
 
     public void deleteAdmin(long id) {
         Admin admin = adminRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Admin not found with ID: " + id));
+        List<Game> games = admin.getGamesList();
+        List<Task> tasks = admin.getTasksList();
+        Admin mainAdmin = adminRepository.findById(1L).orElseThrow(() ->
+                new EntityNotFoundException("Could not find MainAdmin with ID: 1" ));
+        if(games != null && !games.isEmpty()){
+            for (Game game: games){
+                game.setAdmin(mainAdmin);
+                game.setAdminID(mainAdmin.getAdminID());
+            }
+            mainAdmin.getGamesList().addAll(games);
+        }
+        if(tasks != null && !tasks.isEmpty()){
+            for (Task task: tasks){
+                task.setAdmin(mainAdmin);
+                task.setAdminIDAPI(mainAdmin.getAdminID());
+            }
+            mainAdmin.getTasksList().addAll(tasks);
+        }
         adminRepository.delete(admin);
     }
 }
