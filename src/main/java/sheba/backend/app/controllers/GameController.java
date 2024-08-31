@@ -73,9 +73,13 @@ public class GameController {
     }
 
     @PutMapping("update/{id}")
-    public ResponseEntity<?> updateGame(@PathVariable Long id, @RequestBody Game gameDetails) {
+    public ResponseEntity<?> updateGame(@PathVariable Long id, @RequestPart(value = "game", required = false) Game gameDetails,
+                                        @RequestPart(value = "updatedUnits", required = false) List<Unit> updatedUnits,
+                                        @RequestPart(value = "deletedUnitsIds", required = false) List<Long> deletedUnits,
+                                        @RequestPart(value = "newUnits", required = false) List<Unit> newUnits
+    ) {
         try {
-            Game updatedGame = gameBL.updateGame(id, gameDetails);
+            Game updatedGame = gameBL.updateGame(id, gameDetails, updatedUnits, newUnits, deletedUnits);
             return ResponseEntity.ok(updatedGame);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error updating the game: " + e.getMessage());

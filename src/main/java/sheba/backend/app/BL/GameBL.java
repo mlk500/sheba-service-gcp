@@ -7,7 +7,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import sheba.backend.app.DTO.GameDTO;
 import sheba.backend.app.entities.Admin;
 import sheba.backend.app.entities.Game;
 import sheba.backend.app.entities.GameImage;
@@ -128,7 +127,7 @@ public class GameBL {
         return gameRepository.findById(id);
     }
 
-    public Game updateGame(Long id, Game gameDetails) {
+    public Game updateGame(Long id, Game gameDetails, List<Unit> updatedUnits, List<Unit> newUnits, List<Long> deletedUnits) {
         Game existingGame = gameRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Game not found with id " + id));
 
@@ -142,7 +141,26 @@ public class GameBL {
 
         existingGame.setGameName(gameDetails.getGameName());
         existingGame.setDescription(gameDetails.getDescription());
-        return gameRepository.save(existingGame);
+
+        if(newUnits != null && !newUnits.isEmpty()){
+            newUnits.forEach(unit -> unitBL.createUnit(unit, existingGame.getGameID()));
+        }
+        if(updatedUnits != null && !updatedUnits.isEmpty()){
+            updatedUnits.forEach(unit -> unitBL.updateUnit(unit.getUnitID(), unit));
+        }
+        if(deletedUnits != null && !deletedUnits.isEmpty()){
+            deletedUnits.forEach(unitBL::deleteUnit);
+        }
+        Game savedGame = gameRepository.save(existingGame);
+        try {
+            String qrCodePath = generateGameQRCode(savedGame);
+            savedGame.setQRCodePath(qrCodePath);
+            savedGame.setQRCodeURL(gcsBL.getPublicUrl(qrCodePath));
+        } catch (IOException e) {
+            throw new MediaUploadFailed("Failed to generate or upload QR code", e);
+        }
+
+        return gameRepository.save(savedGame);
     }
 
     public void deleteGame(Long id) throws ImageDeleteFailed {
