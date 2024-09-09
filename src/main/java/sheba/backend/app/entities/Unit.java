@@ -44,4 +44,18 @@ public class Unit {
     @JoinColumn(name = "location_id")
     private Location location;
 
+
+    @Override
+    public String toString() {
+        return "Unit{" +
+                "unitID=" + unitID +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", hint='" + hint + '\'' +
+                ", unitOrder=" + unitOrder +
+                ", objectID=" + objectID +
+                ", taskID=" + taskID +
+                ", locationID=" + locationID +
+                '}';
+    }
 }

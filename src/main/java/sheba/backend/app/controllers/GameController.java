@@ -78,6 +78,7 @@ public class GameController {
                                         @RequestPart(value = "deletedUnitsIds", required = false) List<Long> deletedUnits,
                                         @RequestPart(value = "newUnits", required = false) List<Unit> newUnits
     ) {
+        System.out.println("got request " + id+" " + gameDetails.getGameName());
         try {
             Game updatedGame = gameBL.updateGame(id, gameDetails, updatedUnits, newUnits, deletedUnits);
             return ResponseEntity.ok(updatedGame);

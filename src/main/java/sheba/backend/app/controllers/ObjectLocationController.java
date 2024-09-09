@@ -28,6 +28,12 @@ public class ObjectLocationController {
             @PathVariable Long locationId,
             @RequestPart("locationObject") ObjectLocation locationObject,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+        if(images != null ){
+            System.out.println("len is " + images.size());
+        }
+        else {
+            System.out.println("no imgs");
+        }
         try {
             ObjectLocation createdLocationObject = locationObjectBL.createLocationObject(locationId, locationObject, images);
             return ResponseEntity.ok(createdLocationObject);

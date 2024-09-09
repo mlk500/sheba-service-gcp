@@ -141,7 +141,7 @@ public class GameBL {
 
         existingGame.setGameName(gameDetails.getGameName());
         existingGame.setDescription(gameDetails.getDescription());
-
+        System.out.println("existing game 1 - " + existingGame.getUnits());
         if(newUnits != null && !newUnits.isEmpty()){
             newUnits.forEach(unit -> unitBL.createUnit(unit, existingGame.getGameID()));
         }
@@ -152,6 +152,7 @@ public class GameBL {
             deletedUnits.forEach(unitBL::deleteUnit);
         }
         Game savedGame = gameRepository.save(existingGame);
+        System.out.println("saved game 2 - " + savedGame.getUnits());
         try {
             String qrCodePath = generateGameQRCode(savedGame);
             savedGame.setQRCodePath(qrCodePath);
@@ -159,8 +160,9 @@ public class GameBL {
         } catch (IOException e) {
             throw new MediaUploadFailed("Failed to generate or upload QR code", e);
         }
-
-        return gameRepository.save(savedGame);
+        Game finalGame = gameRepository.save(savedGame);
+        System.out.println("final game 3 - " + finalGame.getUnits());
+        return finalGame;
     }
 
     public void deleteGame(Long id) throws ImageDeleteFailed {
