@@ -58,6 +58,7 @@ public class GameBL {
         }
 
         Game savedGame = gameRepository.save(game);
+        System.out.println("saved game is " + savedGame);
         if(units != null){
             Game finalSavedGame = savedGame;
             units.forEach(unit -> unitBL.createUnit(unit, finalSavedGame.getGameID()));

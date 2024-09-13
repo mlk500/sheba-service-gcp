@@ -30,7 +30,7 @@ public class AdminController {
             AdminDTO createdAdmin = adminBL.createSectorAdmin(admin);
             return new ResponseEntity<>(createdAdmin, HttpStatus.CREATED);
         } catch (AdminAlreadyExists e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Admin with this username already exists.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Admin with this sector already exists.");
         }
     }
 
@@ -49,7 +49,9 @@ public class AdminController {
 
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>("Admin with user name " + admin.getUsername() + "not found", HttpStatus.NOT_FOUND);
-        } catch (Exception e) {
+        } catch (AdminAlreadyExists e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Admin with this sector already exists.");
+        }catch (Exception e) {
             return new ResponseEntity<>("An error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

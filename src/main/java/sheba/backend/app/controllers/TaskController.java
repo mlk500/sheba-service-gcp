@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.BL.TaskBL;
+import sheba.backend.app.entities.MediaTask;
 import sheba.backend.app.entities.QuestionTask;
 import sheba.backend.app.entities.Task;
 import sheba.backend.app.exceptions.AdminNotFound;
@@ -40,8 +41,7 @@ public class TaskController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving task: " + e.getMessage());
         } catch (AdminNotFound e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error creating task " + e.getMessage());
-        }
-        catch (MediaUploadFailed e) {
+        } catch (MediaUploadFailed e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading media: " + e.getMessage());
         }
 
@@ -59,6 +59,24 @@ public class TaskController {
         try {
             Task updatedTask = taskBL.updateTask(taskId, task, questionTask, media, sectorAdmin, toBeDeletedMediaIds, tbdQuestion);
             return ResponseEntity.ok(updatedTask);
+        } catch (TaskCannotBeEmpty | IllegalArgumentException | AdminNotFound e) {
+            return ResponseEntity.badRequest().body("Error updating task: " + e.getMessage());
+        } catch (MediaUploadFailed e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error with media: " + e.getMessage());
+        }
+    }
+
+    @PostMapping(value = "duplicate")
+    public ResponseEntity<?> duplicateTask(
+            @RequestPart(value = "task", required = false) Task task,
+            @RequestPart(value = "question", required = false) QuestionTask questionTask,
+            @RequestPart(value = "media", required = false) List<MultipartFile> media,
+            @RequestPart(value = "admin", required = false) String sectorAdmin,
+            @RequestPart(value = "existingMedia", required = false) List<Long> existingMedia,
+            @RequestParam(value = "originalTask") Long originalTaskID) {
+        try {
+            Task newTask = taskBL.duplicateTask(task, questionTask, media, sectorAdmin, existingMedia, originalTaskID);
+            return ResponseEntity.ok(newTask);
         } catch (TaskCannotBeEmpty | IllegalArgumentException | AdminNotFound e) {
             return ResponseEntity.badRequest().body("Error updating task: " + e.getMessage());
         } catch (MediaUploadFailed e) {
@@ -117,7 +135,7 @@ public class TaskController {
         try {
             QuestionTask updatedQuestionTask = taskBL.updateTaskQuestion(taskId, questionTaskId, questionTask);
             return ResponseEntity.ok(updatedQuestionTask);
-        } catch (Exception e ) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error saving task: " + e.getMessage());
         }
     }

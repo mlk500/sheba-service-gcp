@@ -53,16 +53,15 @@ public class TaskBL {
     // use when adding task items
     public Task createTask(Task task, QuestionTask questionTask, List<MultipartFile> media, String adminSector) throws TaskCannotBeEmpty, IOException, AdminNotFound, MediaUploadFailed {
         Admin admin;
-        if(adminSector!= null && SecurityContextHolder.getContext().getAuthentication() != null){
+        if (adminSector != null && SecurityContextHolder.getContext().getAuthentication() != null) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
-        admin = adminRepository.findAdminByUsername(adminDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Admin not found"));
-        task.setAdmin(admin);
-        }
-        else{
-            admin = adminRepository.findAdminBySector(adminSector).orElseThrow(() -> new AdminNotFound("Admin not found with " +adminSector+ " sector"));
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
+            admin = adminRepository.findAdminByUsername(adminDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Admin not found"));
+            task.setAdmin(admin);
+        } else {
+            admin = adminRepository.findAdminBySector(adminSector).orElseThrow(() -> new AdminNotFound("Admin not found with " + adminSector + " sector"));
             task.setAdmin(admin);
         }
 //
@@ -147,7 +146,7 @@ public class TaskBL {
             for (MediaTask mediaTask : task.getMediaList()) {
                 gcsBL.bucketDelete(mediaTask.getMediaPath());
             }
-            boolean res = gcsBL.deleteFolder(StoragePath.MEDIA_TASK_PATH+"/task"+taskId);
+            boolean res = gcsBL.deleteFolder(StoragePath.MEDIA_TASK_PATH + "/task" + taskId);
 //            System.out.println("res is "+ res);
         } catch (Exception e) {
             throw new MediaUploadFailed("Failed to delete media from cloud storage", e);
@@ -185,38 +184,6 @@ public class TaskBL {
         return taskRepository.save(task);
     }
 
-//    public Task updateTask(Long taskID, Task newTask, QuestionTask questionTask, List<MultipartFile> media, String adminSector, List<Long> toBeDeletedMediaIds, Long tbdQuestion) throws TaskCannotBeEmpty, IOException, IllegalArgumentException, AdminNotFound {
-//        Task task = taskRepository.findById(taskID)
-//                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskID));
-//
-//        if (questionTask == null
-//                && media == null
-//                && task.getQuestionTask() == null
-//                && tbdQuestion != null
-//                && task.getTaskFreeTexts().isEmpty() &&
-//                newTask.getTaskFreeTexts().isEmpty() &&
-//                task.getMediaList() == null &&
-//                (task.getMediaList().size() - toBeDeletedMediaIds.size()) <= 0) {
-//            throw new TaskCannotBeEmpty("Task must contain at least one item.");
-//        }
-//
-//        if (newTask != null) {
-//            updateTaskFields(task, newTask);
-//        }
-//        if (toBeDeletedMediaIds != null) {
-//            for (Long mediaId : toBeDeletedMediaIds) {
-//                removeMediaFromTask(taskID, mediaId);
-//            }
-//        }
-//        if (tbdQuestion != null) {
-//            removeQuestionFromTask(taskID);
-//        }
-//        createTask(task, questionTask, media, adminSector);
-//
-//        return taskRepository.save(task);
-//    }
-
-
     private void updateTaskFields(Task task, Task newTask) {
         task.setName(newTask.getName());
         task.setTaskFreeTexts(newTask.getTaskFreeTexts());
@@ -231,78 +198,16 @@ public class TaskBL {
         return questionTaskBL.updateQuestionTask(taskId, questionTaskId, questionTask);
     }
 
-
-//    public Task removeMediaFromTask(Long taskId, Long mediaId) throws TaskCannotBeEmpty, IOException, IllegalArgumentException {
-//        Task task = taskRepository.findById(taskId)
-//                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
-//
-////        if (task.getMediaList().size() < 2 && task.getTaskFreeTexts().isEmpty() && task.getQuestionTask() == null) {
-////            throw new TaskCannotBeEmpty("Removing this item leads to an empty task, delete task instead or add at least one item");
-////        }
-//
-//        MediaTask mediaToRemove = task.getMediaList().stream()
-//                .filter(media -> media.getMediaTaskID() == mediaId)
-//                .findFirst()
-//                .orElseThrow(() -> new IllegalArgumentException("Media not found with id: " + mediaId));
-//
-//        task.getMediaList().remove(mediaToRemove);
-//        mediaTaskBL.deleteMedia(mediaToRemove);
-//
-////        if (task.getQuestionTask() == null && task.getMediaList().isEmpty()) {
-////            throw new TaskCannotBeEmpty("Task must contain at least one item after media removal.");
-////        }
-//        return taskRepository.save(task);
-//    }
-
-
     public Task removeQuestionFromTask(Long taskId) throws TaskCannotBeEmpty, IllegalArgumentException {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
 
-//        if (task.getMediaList().isEmpty() || task.getTaskFreeTexts().isEmpty()) {
-//            throw new TaskCannotBeEmpty("Removing this item leads to an empty task, delete task instead or add at least one item");
-//        }
         if (task.getQuestionTask() != null) {
             questionTaskBL.deleteQuestionTask(task.getQuestionTask());
             task.setQuestionTask(null);
         }
         return taskRepository.save(task);
     }
-
-//    public Optional<Task> getTask(Long id) {
-//        return taskRepository.findById(id);
-//    }
-
-//    public void deleteTask(Long taskId) throws IOException, RuntimeException, TaskIsPartOfUnit {
-//        Task task = taskRepository.findById(taskId)
-//                .orElseThrow(() -> new RuntimeException("Task not found with id: " + taskId));
-//
-//        if(unitRepository.findByTask(task) != null && !unitRepository.findByTask(task).isEmpty()){
-//            unitRepository.findByTask(task);
-//            throw new TaskIsPartOfUnit("Task is part of an existing game");
-//        }
-//
-//        mediaTaskBL.deleteAllMediaForTask(taskId);
-//        if (task.getQuestionTask() != null) {
-//            questionTaskBL.deleteQuestionTask(task.getQuestionTask());
-//        }
-//
-//        String baseDirectory = StoragePath.MEDIA_TASK_PATH;
-//        Path taskDirectory = Paths.get(baseDirectory + File.separator + "task" + taskId);
-//        if (Files.exists(taskDirectory)) {
-//            try (Stream<Path> paths = Files.walk(taskDirectory)) {
-//                paths.sorted(Comparator.reverseOrder())
-//                        .map(Path::toFile)
-//                        .forEach(file -> {
-//                            if (!file.delete()) {
-//                                throw new RuntimeException("Failed to delete file " + file);
-//                            }
-//                        });
-//            }
-//        }
-//
-//        taskRepository.delete(task);
-//    }
 
 
     private void createTaskItems(Task task, QuestionTask questionTask, List<MultipartFile> media) throws MediaUploadFailed {
@@ -326,10 +231,6 @@ public class TaskBL {
     }
 
 
-//    public List<Task> getAllTasks() {
-//        return taskRepository.findAll();
-//    }
-
     public Optional<Task> getTask(Long id) {
         Optional<Task> taskOptional = taskRepository.findById(id);
         taskOptional.ifPresent(this::setMediaUrls);
@@ -347,6 +248,39 @@ public class TaskBL {
             String url = gcsBL.getPublicUrl(mediaTask.getMediaPath());
             mediaTask.setMediaUrl(url);
         });
+    }
+
+    public Task duplicateTask(Task task, QuestionTask questionTask, List<MultipartFile> media, String sectorAdmin, List<Long> existingMedia, Long originalTaskID) throws AdminNotFound, TaskCannotBeEmpty {
+        Task originalTask = taskRepository.findById(originalTaskID)
+                .orElseThrow(() -> new IllegalArgumentException("Original Task not found with id: " + originalTaskID));
+        Admin admin;
+        if (sectorAdmin != null) {
+            admin = adminRepository.findAdminBySector(sectorAdmin).orElseThrow(() -> new AdminNotFound("Admin not found with " + sectorAdmin + " sector"));
+            task.setAdmin(admin);
+        }
+        else{
+            admin = originalTask.getAdmin();
+            task.setAdmin(admin);
+        }
+        task.setAdminIDAPI(admin.getAdminID());
+        if (questionTask == null && media == null && task.getTaskFreeTexts().isEmpty() && task.getMediaList() == null) {
+            throw new TaskCannotBeEmpty("Task must contain at least one item.");
+        }
+        task = taskRepository.save(task);
+        if (existingMedia != null && !existingMedia.isEmpty()) {
+            for (Long mediaTask : existingMedia) {
+                if (mediaTask != null) {
+                    MediaTask savedMedia = mediaTaskBL.duplicateMediaTask(mediaTask, task);
+                    task.getMediaList().add(savedMedia);
+                }
+            }
+        }
+        try {
+            createTaskItems(task, questionTask, media);
+        } catch (MediaUploadFailed e) {
+            throw new MediaUploadFailed("Failed to create task due to media upload failure", e);
+        }
+        return taskRepository.save(task);
     }
 }
 

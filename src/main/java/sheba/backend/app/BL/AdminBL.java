@@ -29,8 +29,9 @@ public class AdminBL {
             throw new IllegalArgumentException("Username cannot be null or empty");
         }
 
-        if (this.adminRepository.findAdminByUsername(admin.getUsername()).isPresent()) {
-            throw new AdminAlreadyExists("Admin with username " + admin.getUsername() + " already exists");
+        if (this.adminRepository.findAdminBySector(admin.getSector()).isPresent()) {
+            System.out.println("in here");
+            throw new AdminAlreadyExists("Admin with sector " + admin.getSector() + " already exists");
         }
 
         admin.setPassword(passwordEncoder.encode(admin.getPassword()));
@@ -47,10 +48,16 @@ public class AdminBL {
                 .collect(Collectors.toList());
     }
 
-    public AdminDTO updateAdmin(long adminID, Admin admin, String newPassword) {
+    public AdminDTO updateAdmin(long adminID, Admin admin, String newPassword) throws AdminAlreadyExists {
 
         Admin currAdmin = adminRepository.findById(adminID).orElseThrow(() -> new EntityNotFoundException("Admin not found with ID " + adminID));
-        if(newPassword != null && !newPassword.isEmpty()){
+        if (!admin.getSector().equals(currAdmin.getSector())) {
+            if (this.adminRepository.findAdminBySector(admin.getSector()).isPresent()) {
+                System.out.println("in here");
+                throw new AdminAlreadyExists("Admin with sector " + admin.getSector() + " already exists");
+            }
+        }
+        if (newPassword != null && !newPassword.isEmpty()) {
             currAdmin.setPassword(passwordEncoder.encode(newPassword));
         }
         currAdmin.setUsername(admin.getUsername());
@@ -68,16 +75,16 @@ public class AdminBL {
         List<Game> games = admin.getGamesList();
         List<Task> tasks = admin.getTasksList();
         Admin mainAdmin = adminRepository.findById(1L).orElseThrow(() ->
-                new EntityNotFoundException("Could not find MainAdmin with ID: 1" ));
-        if(games != null && !games.isEmpty()){
-            for (Game game: games){
+                new EntityNotFoundException("Could not find MainAdmin with ID: 1"));
+        if (games != null && !games.isEmpty()) {
+            for (Game game : games) {
                 game.setAdmin(mainAdmin);
                 game.setAdminID(mainAdmin.getAdminID());
             }
             mainAdmin.getGamesList().addAll(games);
         }
-        if(tasks != null && !tasks.isEmpty()){
-            for (Task task: tasks){
+        if (tasks != null && !tasks.isEmpty()) {
+            for (Task task : tasks) {
                 task.setAdmin(mainAdmin);
                 task.setAdminIDAPI(mainAdmin.getAdminID());
             }

@@ -1,5 +1,6 @@
 package sheba.backend.app.BL;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import sheba.backend.app.entities.MediaTask;
@@ -64,36 +65,6 @@ public class MediaTaskBL {
     }
 
 
-//    public MediaTask createMedia(Task task, MultipartFile file) throws IOException {
-//        MediaTask mediaTask = new MediaTask();
-//        String filename = generateUniqueFileName(task.getTaskID(), Objects.requireNonNull(file.getOriginalFilename()));
-//        mediaTask.setTask(task);
-//        mediaTask.setFileName(filename);
-//        mediaTask.setMediaType(file.getContentType());
-//        mediaTask.setMediaPath(storeFile(task.getTaskID(), file, filename));
-//
-//        return mediaTaskRepository.save(mediaTask);
-//    }
-
-//    public void deleteMedia(MediaTask mediaTask) throws IOException {
-//        if (mediaTask != null && mediaTask.getMediaPath() != null) {
-//            deleteMediaFile(mediaTask.getMediaPath());
-//            mediaTaskRepository.delete(mediaTask);
-//        }
-//    }
-
-//    public void deleteAllMediaForTask(Long taskId) throws IOException {
-//        List<MediaTask> mediaTasks = mediaTaskRepository.findAllByTaskId(taskId);
-//        for (MediaTask mediaTask : mediaTasks) {
-//            Path pathToFile = Paths.get(mediaTask.getMediaPath());
-//            if (Files.exists(pathToFile)) {
-//                Files.delete(pathToFile);
-//            }
-//            mediaTaskRepository.delete(mediaTask);
-//        }
-//    }
-
-
     private String storeFile(long taskId, MultipartFile file, String filename) throws IOException {
         String baseDirectory = StoragePath.MEDIA_TASK_PATH;
         Path taskDirectory = Paths.get(baseDirectory + File.separator + "task" + taskId);
@@ -131,4 +102,18 @@ public class MediaTaskBL {
         }
         return fileName;
     }
+
+    public MediaTask duplicateMediaTask(Long originalMediaTaskID, Task newTask) {
+        MediaTask originalMediaTask = mediaTaskRepository.findById(originalMediaTaskID).orElseThrow(() -> new EntityNotFoundException("Media not found with id " + originalMediaTaskID));
+        MediaTask duplicatedMediaTask = new MediaTask();
+
+        duplicatedMediaTask.setTask(newTask);
+        duplicatedMediaTask.setFileName(originalMediaTask.getFileName());
+        duplicatedMediaTask.setMediaPath(originalMediaTask.getMediaPath());
+        duplicatedMediaTask.setMediaType(originalMediaTask.getMediaType());
+        duplicatedMediaTask.setMediaUrl(originalMediaTask.getMediaUrl());
+
+        return mediaTaskRepository.save(duplicatedMediaTask);
+    }
+
 }
