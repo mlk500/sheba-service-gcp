@@ -232,7 +232,7 @@ public class GameBL {
         }
 
         Game savedGame = gameRepository.save(existingGame);
-        System.out.println("saved game 2 - " + savedGame.getUnits());
+//        System.out.println("saved game 2 - " + savedGame.getUnits());
         try {
             String qrCodePath = generateGameQRCode(savedGame);
             savedGame.setQRCodePath(qrCodePath);

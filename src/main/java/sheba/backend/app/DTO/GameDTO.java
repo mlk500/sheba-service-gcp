@@ -10,6 +10,7 @@ public class GameDTO {
 
     private long gameID;
     private String gameName;
+    private String description;
     private String QRCodeURL;
     private List<UnitDTO> units;
 
