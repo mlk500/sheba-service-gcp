@@ -72,17 +72,31 @@ public class GameController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+//    @PutMapping("update/{id}")
+//    public ResponseEntity<?> updateGame(@PathVariable Long id, @RequestPart(value = "game", required = false) Game gameDetails,
+//                                        @RequestPart(value = "updatedUnits", required = false) List<Unit> updatedUnits,
+//                                        @RequestPart(value = "deletedUnitsIds", required = false) List<Long> deletedUnits,
+//                                        @RequestPart(value = "newUnits", required = false) List<Unit> newUnits
+//    ) {
+//        System.out.println("got request " + id+" " + gameDetails.getGameName());
+//        try {
+//            Game updatedGame = gameBL.updateGame(id, gameDetails, updatedUnits, newUnits, deletedUnits);
+//            return ResponseEntity.ok(updatedGame);
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body("Error updating the game: " + e.getMessage());
+//        }
+//    }
+
     @PutMapping("update/{id}")
     public ResponseEntity<?> updateGame(@PathVariable Long id, @RequestPart(value = "game", required = false) Game gameDetails,
-                                        @RequestPart(value = "updatedUnits", required = false) List<Unit> updatedUnits,
-                                        @RequestPart(value = "deletedUnitsIds", required = false) List<Long> deletedUnits,
-                                        @RequestPart(value = "newUnits", required = false) List<Unit> newUnits
+                                        @RequestPart(value = "units", required = false) List<Unit> units
     ) {
         System.out.println("got request " + id+" " + gameDetails.getGameName());
         try {
-            Game updatedGame = gameBL.updateGame(id, gameDetails, updatedUnits, newUnits, deletedUnits);
+            Game updatedGame = gameBL.updateGame(id, gameDetails, units);
             return ResponseEntity.ok(updatedGame);
         } catch (Exception e) {
+            System.out.println("Error in updating the game: " + e.getMessage());
             return ResponseEntity.badRequest().body("Error updating the game: " + e.getMessage());
         }
     }

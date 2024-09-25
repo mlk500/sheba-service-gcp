@@ -24,8 +24,10 @@ import sheba.backend.app.util.StoragePath;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class GameBL {
@@ -60,6 +62,7 @@ public class GameBL {
         Game savedGame = gameRepository.save(game);
         System.out.println("saved game is " + savedGame);
         if(units != null){
+            System.out.println("units are " + units);
             Game finalSavedGame = savedGame;
             units.forEach(unit -> unitBL.createUnit(unit, finalSavedGame.getGameID()));
             savedGame = gameRepository.findById(savedGame.getGameID())
@@ -128,43 +131,43 @@ public class GameBL {
         return gameRepository.findById(id);
     }
 
-    public Game updateGame(Long id, Game gameDetails, List<Unit> updatedUnits, List<Unit> newUnits, List<Long> deletedUnits) {
-        Game existingGame = gameRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Game not found with id " + id));
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
-
-        if (!adminDetails.getUsername().equals(existingGame.getAdmin().getUsername()) &&
-                !adminDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MAIN_ADMIN"))) {
-            throw new RuntimeException("You do not have permission to update this game");
-        }
-
-        existingGame.setGameName(gameDetails.getGameName());
-        existingGame.setDescription(gameDetails.getDescription());
-        System.out.println("existing game 1 - " + existingGame.getUnits());
-        if(newUnits != null && !newUnits.isEmpty()){
-            newUnits.forEach(unit -> unitBL.createUnit(unit, existingGame.getGameID()));
-        }
-        if(updatedUnits != null && !updatedUnits.isEmpty()){
-            updatedUnits.forEach(unit -> unitBL.updateUnit(unit.getUnitID(), unit));
-        }
-        if(deletedUnits != null && !deletedUnits.isEmpty()){
-            deletedUnits.forEach(unitBL::deleteUnit);
-        }
-        Game savedGame = gameRepository.save(existingGame);
-        System.out.println("saved game 2 - " + savedGame.getUnits());
-        try {
-            String qrCodePath = generateGameQRCode(savedGame);
-            savedGame.setQRCodePath(qrCodePath);
-            savedGame.setQRCodeURL(gcsBL.getPublicUrl(qrCodePath));
-        } catch (IOException e) {
-            throw new MediaUploadFailed("Failed to generate or upload QR code", e);
-        }
-        Game finalGame = gameRepository.save(savedGame);
-        System.out.println("final game 3 - " + finalGame.getUnits());
-        return finalGame;
-    }
+//    public Game updateGame(Long id, Game gameDetails, List<Unit> updatedUnits, List<Unit> newUnits, List<Long> deletedUnits) {
+//        Game existingGame = gameRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("Game not found with id " + id));
+//
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
+//
+//        if (!adminDetails.getUsername().equals(existingGame.getAdmin().getUsername()) &&
+//                !adminDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MAIN_ADMIN"))) {
+//            throw new RuntimeException("You do not have permission to update this game");
+//        }
+//
+//        existingGame.setGameName(gameDetails.getGameName());
+//        existingGame.setDescription(gameDetails.getDescription());
+//        System.out.println("existing game 1 - " + existingGame.getUnits());
+//        if(newUnits != null && !newUnits.isEmpty()){
+//            newUnits.forEach(unit -> unitBL.createUnit(unit, existingGame.getGameID()));
+//        }
+//        if(updatedUnits != null && !updatedUnits.isEmpty()){
+//            updatedUnits.forEach(unit -> unitBL.updateUnit(unit.getUnitID(), unit));
+//        }
+//        if(deletedUnits != null && !deletedUnits.isEmpty()){
+//            deletedUnits.forEach(unitBL::deleteUnit);
+//        }
+//        Game savedGame = gameRepository.save(existingGame);
+//        System.out.println("saved game 2 - " + savedGame.getUnits());
+//        try {
+//            String qrCodePath = generateGameQRCode(savedGame);
+//            savedGame.setQRCodePath(qrCodePath);
+//            savedGame.setQRCodeURL(gcsBL.getPublicUrl(qrCodePath));
+//        } catch (IOException e) {
+//            throw new MediaUploadFailed("Failed to generate or upload QR code", e);
+//        }
+//        Game finalGame = gameRepository.save(savedGame);
+//        System.out.println("final game 3 - " + finalGame.getUnits());
+//        return finalGame;
+//    }
 
     public void deleteGame(Long id) throws ImageDeleteFailed {
         Game game = gameRepository.findById(id)
@@ -189,5 +192,59 @@ public class GameBL {
         }
         gameRepository.deleteById(id);
     }
+
+
+    @Transactional
+    public Game updateGame(Long id, Game gameDetails, List<Unit> units) {
+        Game existingGame = gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Game not found with id " + id));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
+
+        if (!adminDetails.getUsername().equals(existingGame.getAdmin().getUsername()) &&
+                !adminDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MAIN_ADMIN"))) {
+            throw new RuntimeException("You do not have permission to update this game");
+        }
+
+        existingGame.setGameName(gameDetails.getGameName());
+        existingGame.setDescription(gameDetails.getDescription());
+        System.out.println("existing game 1 - " + existingGame.getUnits());
+        System.out.println("units sent " + units);
+        if(units != null && !units.isEmpty()){
+            for(Unit unit : units){
+                if(existingGame.getUnits().contains(unit)){
+                    unitBL.updateUnit(unit.getUnitID(), unit);
+                }
+                else{
+                    unitBL.createUnit(unit, existingGame.getGameID());
+                }
+            }
+            List<Unit> unitsToDelete = existingGame.getUnits().stream()
+                    .filter(existingUnit -> units.stream()
+                            .noneMatch(newUnit -> newUnit.getUnitID() == existingUnit.getUnitID()))
+                    .toList();
+
+            for (Unit unitToDelete : unitsToDelete) {
+                unitBL.deleteUnit(unitToDelete.getUnitID());
+                existingGame.getUnits().remove(unitToDelete);
+            }
+        }
+
+        Game savedGame = gameRepository.save(existingGame);
+        System.out.println("saved game 2 - " + savedGame.getUnits());
+        try {
+            String qrCodePath = generateGameQRCode(savedGame);
+            savedGame.setQRCodePath(qrCodePath);
+            savedGame.setQRCodeURL(gcsBL.getPublicUrl(qrCodePath));
+        } catch (IOException e) {
+            throw new MediaUploadFailed("Failed to generate or upload QR code", e);
+        }
+        Game finalGame = gameRepository.save(savedGame);
+        System.out.println("final game 3 - " + finalGame.getUnits());
+        return finalGame;
+    }
+
+
 
 }

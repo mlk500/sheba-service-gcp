@@ -1,6 +1,7 @@
 package sheba.backend.app.BL;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sheba.backend.app.entities.Unit;
 import sheba.backend.app.repositories.*;
 
@@ -70,8 +71,18 @@ public class UnitBL {
         });
     }
 
+    @Transactional
     public void deleteUnit(long id) {
         unitRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteUnit(Unit unit) {
+        try {
+            unitRepository.delete(unit);
+        } catch (Exception e){
+            System.out.println("exception in delete unit " + e.getMessage());
+        }
     }
 }
 
