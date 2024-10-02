@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Entity
@@ -31,6 +32,10 @@ public class Game {
 
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Unit> units;
+
+    public void sortUnits() {
+        units.sort(Comparator.comparingInt(Unit::getUnitOrder));
+    }
 
     @Override
     public String toString() {

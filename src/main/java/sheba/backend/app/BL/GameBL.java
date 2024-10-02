@@ -24,9 +24,7 @@ import sheba.backend.app.util.StoragePath;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,7 +48,7 @@ public class GameBL {
 
     @Transactional
     public Game createGame(Game game, MultipartFile image, List<Unit> units) throws IOException, WriterException {
-        if(SecurityContextHolder.getContext().getAuthentication() != null){
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
             Admin admin = adminRepository.findAdminByUsername(adminDetails.getUsername())
@@ -61,7 +59,7 @@ public class GameBL {
 
         Game savedGame = gameRepository.save(game);
         System.out.println("saved game is " + savedGame);
-        if(units != null){
+        if (units != null) {
             System.out.println("units are " + units);
             Game finalSavedGame = savedGame;
             units.forEach(unit -> unitBL.createUnit(unit, finalSavedGame.getGameID()));
@@ -89,7 +87,7 @@ public class GameBL {
 
     private String generateGameQRCode(Game game) throws IOException {
         String baseUrl = "https://sheba-service-gcp-tm3zus3bzq-uc.a.run.app";
-        String gameApiUrl = baseUrl + Endpoints.PUBLIC_ENDPOINT + "/get-game/"+ game.getGameID();
+        String gameApiUrl = baseUrl + Endpoints.PUBLIC_ENDPOINT + "/get-game/" + game.getGameID();
         System.out.println("game url" + gameApiUrl);
         ByteArrayOutputStream qrOutputStream = new ByteArrayOutputStream();
         try {
@@ -123,8 +121,13 @@ public class GameBL {
         game.setGameImage(gameImage);
         return game;
     }
+
     public List<Game> getAllGames() {
-        return gameRepository.findAll();
+        List<Game> games = gameRepository.findAll();
+        for (Game game : games) {
+            game.sortUnits();
+        }
+        return games;
     }
 
     public Optional<Game> getGameById(Long id) {
@@ -206,17 +209,17 @@ public class GameBL {
                 !adminDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MAIN_ADMIN"))) {
             throw new RuntimeException("You do not have permission to update this game");
         }
-
         existingGame.setGameName(gameDetails.getGameName());
         existingGame.setDescription(gameDetails.getDescription());
         System.out.println("existing game 1 - " + existingGame.getUnits());
-        System.out.println("units sent " + units);
-        if(units != null && !units.isEmpty()){
-            for(Unit unit : units){
-                if(existingGame.getUnits().contains(unit)){
+        if (units != null && !units.isEmpty()) {
+            System.out.println("received units " + units);
+//            organizeUnits(units);
+//            System.out.println("units after sort " + units);
+            for (Unit unit : units) {
+                if (existingGame.getUnits().contains(unit)) {
                     unitBL.updateUnit(unit.getUnitID(), unit);
-                }
-                else{
+                } else {
                     unitBL.createUnit(unit, existingGame.getGameID());
                 }
             }
@@ -229,6 +232,7 @@ public class GameBL {
                 unitBL.deleteUnit(unitToDelete.getUnitID());
                 existingGame.getUnits().remove(unitToDelete);
             }
+            existingGame.sortUnits();
         }
 
         Game savedGame = gameRepository.save(existingGame);
@@ -245,6 +249,23 @@ public class GameBL {
         return finalGame;
     }
 
+    private void organizeUnits(List<Unit> units) {
+        units.sort((Comparator.comparingInt(Unit::getUnitOrder)));
+        System.out.println("units in sort method " + units);
+    }
+
+    public HashSet<Game> getGamesWithObject(Long objectID) {
+        List<Unit> units = unitBL.getUnitWithObject(objectID);
+        HashSet<Game> games = new HashSet<>();
+        if (units != null && !units.isEmpty()) {
+            for (Unit unit : units) {
+                if (unit.getGame() != null) {
+                    games.add(unit.getGame());
+                }
+            }
+        }
+        return games;
+    }
 
 
 }

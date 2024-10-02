@@ -50,6 +50,7 @@ public class PublicControllers {
     public ResponseEntity<GameDTO> getGameById(@PathVariable Long id) {
         Optional<Game> gameOptional = gameBL.getGameById(id);
         if(gameOptional.isPresent()){
+            gameOptional.get().sortUnits();
             System.out.println("game is  " + gameOptional.get().getGameID());
             return gameOptional
                     .map(game -> ResponseEntity.ok(gameMapper.gameToGameDTO(game)))

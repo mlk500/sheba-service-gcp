@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import sheba.backend.app.entities.Unit;
 import sheba.backend.app.repositories.*;
 
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -83,6 +84,11 @@ public class UnitBL {
         } catch (Exception e){
             System.out.println("exception in delete unit " + e.getMessage());
         }
+    }
+
+    public List<Unit> getUnitWithObject(Long objectID){
+        return unitRepository.findUnitsByObjectID(objectID);
+
     }
 }
 

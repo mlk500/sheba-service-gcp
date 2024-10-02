@@ -12,4 +12,6 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
      List<Unit> findByTask(Task task);
      List<Unit> findByLocation(Location location);
      List<Unit> findByObject(ObjectLocation objectLocation);
+
+     List<Unit> findUnitsByObjectID(Long objectID);
 }

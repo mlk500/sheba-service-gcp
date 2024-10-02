@@ -14,6 +14,7 @@ import sheba.backend.app.mappers.GameMapper;
 import sheba.backend.app.util.Endpoints;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -110,5 +111,11 @@ public class GameController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error deleting the game: " + e.getMessage());
         }
+    }
+
+    @GetMapping(value="get-games-for-object/{objectID}")
+    public ResponseEntity<HashSet<Game>> getAllObjects(@PathVariable Long objectID){
+        HashSet<Game> games = gameBL.getGamesWithObject(objectID);
+        return ResponseEntity.ok(games);
     }
 }
