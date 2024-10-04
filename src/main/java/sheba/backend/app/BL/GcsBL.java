@@ -37,7 +37,7 @@ public class GcsBL {
         try (InputStream inputStream = file.getInputStream()) {
             Blob blob = storage.create(blobInfo, inputStream);
             if (blob != null) {
-                System.out.println("GcsBL: File uploaded successfully to GCS. Object name: " + objectName);
+//                System.out.println("GcsBL: File uploaded successfully to GCS. Object name: " + objectName);
                 return objectName;
             } else {
                 System.out.println("GcsBL: File upload failed. Blob is null.");
@@ -74,7 +74,6 @@ public class GcsBL {
         if (!folderName.endsWith("/")) {
             folderName += "/";
         }
-        System.out.println("folder is "+ folderName);
         return storage.delete(bucketName, folderName);
     }
 

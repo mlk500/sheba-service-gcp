@@ -136,44 +136,6 @@ public class GameBL {
         return gameRepository.findById(id);
     }
 
-//    public Game updateGame(Long id, Game gameDetails, List<Unit> updatedUnits, List<Unit> newUnits, List<Long> deletedUnits) {
-//        Game existingGame = gameRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("Game not found with id " + id));
-//
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        CustomAdminDetails adminDetails = (CustomAdminDetails) authentication.getPrincipal();
-//
-//        if (!adminDetails.getUsername().equals(existingGame.getAdmin().getUsername()) &&
-//                !adminDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_MAIN_ADMIN"))) {
-//            throw new RuntimeException("You do not have permission to update this game");
-//        }
-//
-//        existingGame.setGameName(gameDetails.getGameName());
-//        existingGame.setDescription(gameDetails.getDescription());
-//        System.out.println("existing game 1 - " + existingGame.getUnits());
-//        if(newUnits != null && !newUnits.isEmpty()){
-//            newUnits.forEach(unit -> unitBL.createUnit(unit, existingGame.getGameID()));
-//        }
-//        if(updatedUnits != null && !updatedUnits.isEmpty()){
-//            updatedUnits.forEach(unit -> unitBL.updateUnit(unit.getUnitID(), unit));
-//        }
-//        if(deletedUnits != null && !deletedUnits.isEmpty()){
-//            deletedUnits.forEach(unitBL::deleteUnit);
-//        }
-//        Game savedGame = gameRepository.save(existingGame);
-//        System.out.println("saved game 2 - " + savedGame.getUnits());
-//        try {
-//            String qrCodePath = generateGameQRCode(savedGame);
-//            savedGame.setQRCodePath(qrCodePath);
-//            savedGame.setQRCodeURL(gcsBL.getPublicUrl(qrCodePath));
-//        } catch (IOException e) {
-//            throw new MediaUploadFailed("Failed to generate or upload QR code", e);
-//        }
-//        Game finalGame = gameRepository.save(savedGame);
-//        System.out.println("final game 3 - " + finalGame.getUnits());
-//        return finalGame;
-//    }
-
     public void deleteGame(Long id) throws ImageDeleteFailed {
         Game game = gameRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Game not found with id " + id));
@@ -213,9 +175,8 @@ public class GameBL {
         }
         existingGame.setGameName(gameDetails.getGameName());
         existingGame.setDescription(gameDetails.getDescription());
-        System.out.println("existing game 1 - " + existingGame.getUnits());
         if (units != null && !units.isEmpty()) {
-            System.out.println("received units " + units);
+//            System.out.println("received units " + units);
 //            organizeUnits(units);
 //            System.out.println("units after sort " + units);
             for (Unit unit : units) {
@@ -247,13 +208,8 @@ public class GameBL {
             throw new MediaUploadFailed("Failed to generate or upload QR code", e);
         }
         Game finalGame = gameRepository.save(savedGame);
-        System.out.println("final game 3 - " + finalGame.getUnits());
+//        System.out.println("final game 3 - " + finalGame.getUnits());
         return finalGame;
-    }
-
-    private void organizeUnits(List<Unit> units) {
-        units.sort((Comparator.comparingInt(Unit::getUnitOrder)));
-        System.out.println("units in sort method " + units);
     }
 
     public HashSet<Game> getGamesWithObject(Long objectID) {
