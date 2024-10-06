@@ -10,6 +10,7 @@ public interface GameMapper {
 //    @Mapping(source = "gameID", target = "gameID")
 //    @Mapping(source = "gameName", target = "gameName")
 //    @Mapping(source = "QRCodePath", target = "QRCodePath")
+    @Mapping(source = "description", target = "description")
     @Mapping(source = "units", target = "units")
     GameDTO gameToGameDTO(Game game);
 

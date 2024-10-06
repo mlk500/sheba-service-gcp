@@ -55,13 +55,14 @@ public class GameController {
     }
 
     @GetMapping("getAll")
-    public ResponseEntity<List<Game>> getAllGames() {
+    public ResponseEntity<List<GameDTO>> getAllGames() {
         List<Game> games = gameBL.getAllGames();
-//        List<GameDTO> gameDTOs = games.stream()
-//                .map(gameMapper::gameToGameDTO)
-//                .collect(Collectors.toList());
+
+        List<GameDTO> gameDTOs = games.stream()
+                .map(gameMapper::gameToGameDTO)
+                .toList();
 //        System.out.println("game dto is " + gameDTOs);
-        return ResponseEntity.ok(games);
+        return ResponseEntity.ok(gameDTOs);
     }
 
     @GetMapping("get/{id}")
