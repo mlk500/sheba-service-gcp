@@ -90,7 +90,8 @@ public class GameBL {
         String baseUrl = "https://treasure-hunt-player.web.app/";
 //        String gameApiUrl = baseUrl + Endpoints.PUBLIC_ENDPOINT + "/get-game/" + game.getGameID();
         String gameApiUrl = baseUrl + game.getGameID();
-        System.out.println("game url" + gameApiUrl);
+        String fileName = "game-" + game.getGameID() + "-QRCODE-" + System.currentTimeMillis() + ".png";
+        System.out.println("game url " + gameApiUrl);
         ByteArrayOutputStream qrOutputStream = new ByteArrayOutputStream();
         try {
             QRCodeGenerator.generateQRCode("game-", gameApiUrl, qrOutputStream, StoragePath.GAME_QR_IMG);
@@ -101,7 +102,7 @@ public class GameBL {
         String qrCodePath = gcsBL.bucketUploadBytes(
                 qrOutputStream.toByteArray(),
                 StoragePath.GAME_QR,
-                "game-" + game.getGameID() + "-QRCODE.png",
+                fileName,
                 "image/png"
         );
         return qrCodePath;
@@ -162,7 +163,7 @@ public class GameBL {
 
 
     @Transactional
-    public Game updateGame(Long id, Game gameDetails, List<Unit> units) {
+    public Game updateGame(Long id, Game gameDetails, List<Unit> units) throws ImageDeleteFailed {
         Game existingGame = gameRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Game not found with id " + id));
 
@@ -201,9 +202,15 @@ public class GameBL {
         Game savedGame = gameRepository.save(existingGame);
 //        System.out.println("saved game 2 - " + savedGame.getUnits());
         try {
+            gcsBL.bucketDelete(savedGame.getQRCodePath());
+        } catch (Exception e) {
+            throw new ImageDeleteFailed("Could not Delete Game's QR Code");
+        }
+        try {
             String qrCodePath = generateGameQRCode(savedGame);
             savedGame.setQRCodePath(qrCodePath);
-            savedGame.setQRCodeURL(gcsBL.getPublicUrl(qrCodePath));
+            savedGame.setQRCodeURL(gcsBL.getPublicUrl(qrCodePath) + "?t=" + System.currentTimeMillis());
+//            savedGame.setQRCodeURL(gcsBL.getPublicUrl(qrCodePath));
         } catch (IOException e) {
             throw new MediaUploadFailed("Failed to generate or upload QR code", e);
         }
